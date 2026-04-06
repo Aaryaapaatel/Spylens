@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../services/supabase';
 
 function Login() {
   const navigate = useNavigate();
@@ -9,186 +10,197 @@ function Login() {
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
 
   const handleSubmit = async () => {
     if (!email || !password) {
       setError('Please fill in all fields');
       return;
     }
+    if (isSignup && !name) {
+      setError('Please enter your name');
+      return;
+    }
     setError('');
     setLoading(true);
 
     try {
-      const endpoint = isSignup ? '/api/auth/signup' : '/api/auth/login';
-      const body = isSignup
-        ? { email, password, full_name: name }
-        : { email, password };
-
-      const response = await fetch(`http://127.0.0.1:8000${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        navigate('/dashboard');
+      if (isSignup) {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { full_name: name }
+          }
+        });
+        if (error) throw error;
+        setMessage('Account created! Please check your email to verify.');
       } else {
-        setError('Something went wrong. Please try again.');
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+        if (error) throw error;
+        navigate('/dashboard');
       }
     } catch (err) {
-      setError('Cannot connect to backend. Make sure it is running.');
+      setError(err.message);
     }
 
     setLoading(false);
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#050810', color: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'system-ui' }}>
+    <div style={{ minHeight: '100vh', background: '#070707', color: '#f0ece4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;700;800;900&family=Playfair+Display:ital,wght@0,700;0,800;1,700;1,800&display=swap');
 
         @keyframes fadeUp {
           from { opacity: 0; transform: translateY(30px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        @keyframes glow {
-          0%, 100% { box-shadow: 0 0 20px rgba(245,158,11,0.3); }
-          50% { box-shadow: 0 0 60px rgba(245,158,11,0.6); }
-        }
         @keyframes pulse {
           0%, 100% { opacity: 0.4; transform: scale(1); }
           50% { opacity: 1; transform: scale(1.05); }
         }
-        @keyframes shimmer {
-          0% { background-position: -200% center; }
-          100% { background-position: 200% center; }
-        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         .login-card {
-          background: rgba(255,255,255,0.02);
-          border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 24px;
-          padding: 48px;
+          background: #0c0c0c;
+          border: 1px solid #161616;
+          border-radius: 4px;
+          padding: 52px;
           width: 100%;
-          max-width: 440px;
-          backdrop-filter: blur(20px);
+          max-width: 460px;
           animation: fadeUp 0.6s ease both;
         }
 
         .input-field {
           width: 100%;
-          background: rgba(255,255,255,0.03);
-          border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 12px;
+          background: #080808;
+          border: 1px solid #1a1a1a;
+          border-radius: 2px;
           padding: 14px 18px;
-          font-size: 15px;
-          color: #e2e8f0;
+          font-size: 14px;
+          color: #f0ece4;
           outline: none;
-          font-family: 'IBM Plex Sans', sans-serif;
+          font-family: 'Montserrat', sans-serif;
+          font-weight: 400;
           transition: all 0.2s ease;
         }
 
         .input-field:focus {
-          border-color: rgba(245,158,11,0.5);
-          background: rgba(245,158,11,0.04);
-          box-shadow: 0 0 0 3px rgba(245,158,11,0.1);
+          border-color: #e8a020;
+          background: #0a0a0a;
         }
 
-        .input-field::placeholder { color: #4b5563; }
+        .input-field::placeholder {
+          color: #2a2a2a;
+          font-weight: 400;
+        }
 
         .submit-btn {
           width: 100%;
-          padding: 15px;
-          background: linear-gradient(135deg, #f59e0b, #ef4444);
+          padding: 16px;
+          background: #e8a020;
           border: none;
-          border-radius: 12px;
-          color: white;
-          font-size: 16px;
-          font-weight: 700;
+          border-radius: 2px;
+          color: #070707;
+          font-size: 11px;
+          font-weight: 800;
           cursor: pointer;
-          font-family: 'Syne', sans-serif;
+          font-family: 'Montserrat', sans-serif;
+          letter-spacing: 0.15em;
+          text-transform: uppercase;
           transition: all 0.2s ease;
-          animation: glow 2s ease infinite;
         }
 
         .submit-btn:hover:not(:disabled) {
+          background: #f0b030;
           transform: translateY(-2px);
-          opacity: 0.9;
+          box-shadow: 0 12px 40px rgba(232,160,32,0.25);
         }
 
         .submit-btn:disabled {
           opacity: 0.5;
           cursor: not-allowed;
-          animation: none;
         }
 
         .toggle-btn {
           background: none;
           border: none;
-          color: #f59e0b;
+          color: #e8a020;
           cursor: pointer;
-          font-size: 14px;
-          font-family: 'IBM Plex Sans', sans-serif;
+          font-size: 13px;
+          font-family: 'Montserrat', sans-serif;
+          font-weight: 600;
           text-decoration: underline;
         }
 
-        .shimmer-text {
-          background: linear-gradient(90deg, #f59e0b, #fbbf24, #f59e0b);
-          background-size: 200% auto;
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          animation: shimmer 3s linear infinite;
+        .input-label {
+          font-family: 'Montserrat', sans-serif;
+          font-size: 10px;
+          color: #444;
+          display: block;
+          margin-bottom: 8px;
+          letter-spacing: 0.15em;
+          text-transform: uppercase;
+          font-weight: 600;
         }
       `}</style>
 
-      {/* Background orbs */}
-      <div style={{ position: 'fixed', width: '500px', height: '500px', background: 'rgba(245,158,11,0.08)', borderRadius: '50%', filter: 'blur(100px)', top: '-100px', right: '-100px', animation: 'pulse 4s ease infinite' }} />
-      <div style={{ position: 'fixed', width: '400px', height: '400px', background: 'rgba(59,130,246,0.06)', borderRadius: '50%', filter: 'blur(100px)', bottom: '-100px', left: '-100px', animation: 'pulse 4s ease infinite', animationDelay: '2s' }} />
-      <div style={{ position: 'fixed', inset: 0, backgroundImage: 'linear-gradient(rgba(245,158,11,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(245,158,11,0.02) 1px, transparent 1px)', backgroundSize: '60px 60px', pointerEvents: 'none' }} />
+      {/* Background */}
+      <div style={{ position: 'fixed', width: '500px', height: '500px', background: 'rgba(232,160,32,0.04)', borderRadius: '50%', filter: 'blur(100px)', top: '-100px', right: '-100px', animation: 'pulse 4s ease infinite' }} />
+      <div style={{ position: 'fixed', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px)', backgroundSize: '80px 80px', pointerEvents: 'none' }} />
 
       <div style={{ position: 'relative', zIndex: 1, width: '100%', padding: '24px' }}>
 
         {/* Logo */}
-        <div onClick={() => navigate('/')} style={{ textAlign: 'center', marginBottom: '32px', cursor: 'pointer' }}>
-          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: '32px', fontWeight: '800', background: 'linear-gradient(135deg, #f59e0b, #fbbf24)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            SpyLens
+        <div onClick={() => navigate('/')} style={{ textAlign: 'center', marginBottom: '40px', cursor: 'pointer' }}>
+          <div style={{ fontFamily: 'Playfair Display, serif', fontSize: '28px', fontWeight: '800' }}>
+            SPY<span style={{ color: '#e8a020' }}>LENS</span>
           </div>
         </div>
 
         <div className="login-card" style={{ margin: '0 auto' }}>
-
-          <div style={{ textAlign: 'center', marginBottom: '36px' }}>
-            <h1 style={{ fontFamily: 'Syne, sans-serif', fontSize: '28px', fontWeight: '800', marginBottom: '8px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+            <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: '28px', fontWeight: '800', marginBottom: '8px' }}>
               {isSignup ? 'Create Account' : 'Welcome Back'}
             </h1>
-            <p style={{ color: '#8b949e', fontSize: '14px', fontFamily: 'IBM Plex Sans' }}>
+            <p style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '13px', color: '#444', fontWeight: '400' }}>
               {isSignup ? 'Start analyzing competitors for free' : 'Sign in to your SpyLens account'}
             </p>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '28px' }}>
             {isSignup && (
               <div>
-                <label style={{ fontSize: '13px', color: '#8b949e', display: 'block', marginBottom: '8px', fontFamily: 'IBM Plex Sans' }}>Full Name</label>
+                <label className="input-label">Full Name</label>
                 <input className="input-field" placeholder="John Smith" value={name} onChange={e => setName(e.target.value)} />
               </div>
             )}
             <div>
-              <label style={{ fontSize: '13px', color: '#8b949e', display: 'block', marginBottom: '8px', fontFamily: 'IBM Plex Sans' }}>Email</label>
+              <label className="input-label">Email Address</label>
               <input className="input-field" type="email" placeholder="you@company.com" value={email} onChange={e => setEmail(e.target.value)} />
             </div>
             <div>
-              <label style={{ fontSize: '13px', color: '#8b949e', display: 'block', marginBottom: '8px', fontFamily: 'IBM Plex Sans' }}>Password</label>
-              <input className="input-field" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} />
+              <label className="input-label">Password</label>
+              <input className="input-field" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleSubmit()} />
             </div>
           </div>
 
           {error && (
-            <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', padding: '12px 16px', marginBottom: '16px', fontSize: '14px', color: '#f87171', fontFamily: 'IBM Plex Sans' }}>
+            <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)', borderRadius: '2px', padding: '12px 16px', marginBottom: '20px', fontSize: '13px', color: '#f87171', fontFamily: 'Montserrat, sans-serif' }}>
               {error}
+            </div>
+          )}
+
+          {message && (
+            <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.15)', borderRadius: '2px', padding: '12px 16px', marginBottom: '20px', fontSize: '13px', color: '#34d399', fontFamily: 'Montserrat, sans-serif' }}>
+              {message}
             </div>
           )}
 
@@ -196,15 +208,15 @@ function Login() {
             {loading ? 'Please wait...' : isSignup ? 'Create Account →' : 'Sign In →'}
           </button>
 
-          <div style={{ textAlign: 'center', marginTop: '24px', fontSize: '14px', color: '#8b949e', fontFamily: 'IBM Plex Sans' }}>
+          <div style={{ textAlign: 'center', marginTop: '24px', fontSize: '13px', color: '#444', fontFamily: 'Montserrat, sans-serif' }}>
             {isSignup ? 'Already have an account? ' : "Don't have an account? "}
-            <button className="toggle-btn" onClick={() => { setIsSignup(!isSignup); setError(''); }}>
+            <button className="toggle-btn" onClick={() => { setIsSignup(!isSignup); setError(''); setMessage(''); }}>
               {isSignup ? 'Sign In' : 'Sign Up Free'}
             </button>
           </div>
 
-          <div style={{ textAlign: 'center', marginTop: '16px', fontSize: '12px', color: '#4b5563', fontFamily: 'IBM Plex Mono' }}>
-            ✓ No credit card required
+          <div style={{ textAlign: 'center', marginTop: '16px', fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#222', letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: '600' }}>
+            No credit card required
           </div>
         </div>
       </div>

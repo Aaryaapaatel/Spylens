@@ -10,23 +10,19 @@ function Landing() {
   useEffect(() => {
     const handleMouse = (e) => setMousePos({ x: e.clientX, y: e.clientY });
     window.addEventListener('mousemove', handleMouse);
-
-    // Loading sequence
     setTimeout(() => setLoaded(true), 2000);
     setTimeout(() => setShowContent(true), 2800);
-
     return () => window.removeEventListener('mousemove', handleMouse);
   }, []);
 
   return (
-    <div style={{ minHeight: '100vh', background: '#070707', color: '#f0ece4', fontFamily: 'system-ui', overflowX: 'hidden' }}>
+    <div style={{ minHeight: '100vh', background: '#070707', color: '#f0ece4', overflowX: 'hidden' }}>
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;700;800;900&family=Playfair+Display:ital,wght@0,700;0,800;1,700;1,800&family=DM+Serif+Display:ital@0;1&display=swap');
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Montserrat', sans-serif; }
 
-        /* Loading screen */
         .loader {
           position: fixed;
           inset: 0;
@@ -46,29 +42,19 @@ function Landing() {
           pointer-events: none;
         }
 
-        .loader-text {
-          font-family: 'Syne', sans-serif;
-          font-size: clamp(48px, 10vw, 120px);
+        .loader-word {
+          font-family: 'Playfair Display', serif;
+          font-size: clamp(56px, 12vw, 140px);
           font-weight: 800;
-          letter-spacing: -0.05em;
+          letter-spacing: -0.03em;
           color: #f0ece4;
           overflow: hidden;
-          position: relative;
         }
 
-        .loader-text span {
+        .loader-word span {
           display: inline-block;
-          animation: revealUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-          transform: translateY(100%);
-        }
-
-        .loader-sub {
-          font-family: 'IBM Plex Mono', monospace;
-          font-size: 12px;
-          color: #333;
-          letter-spacing: 0.2em;
-          text-transform: uppercase;
-          animation: fadeIn 1s ease 0.5s both;
+          animation: revealUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          transform: translateY(110%);
         }
 
         .loader-line {
@@ -76,109 +62,122 @@ function Landing() {
           height: 1px;
           background: #e8a020;
           animation: expandLine 1.5s ease forwards;
-          max-width: 200px;
+          max-width: 180px;
         }
 
-        @keyframes expandLine {
-          to { width: 200px; }
+        .loader-sub {
+          font-family: 'Montserrat', sans-serif;
+          font-size: 11px;
+          color: #333;
+          letter-spacing: 0.25em;
+          text-transform: uppercase;
+          font-weight: 500;
+          animation: fadeIn 1s ease 0.6s both;
         }
 
-        @keyframes revealUp {
-          to { transform: translateY(0); }
+        @keyframes expandLine { to { width: 180px; } }
+        @keyframes revealUp { to { transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(70px); }
+          to { opacity: 1; transform: translateY(0); }
         }
 
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
+        @keyframes marquee {
+          from { transform: translateX(0); }
+          to { transform: translateX(-50%); }
         }
 
-        /* Main content animations */
         .slide-up {
           opacity: 0;
           transform: translateY(80px);
-          transition: all 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+          transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
         }
-
-        .slide-up.show {
-          opacity: 1;
-          transform: translateY(0);
-        }
+        .slide-up.show { opacity: 1; transform: translateY(0); }
 
         .slide-left {
           opacity: 0;
           transform: translateX(-80px);
-          transition: all 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+          transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
         }
-
-        .slide-left.show {
-          opacity: 1;
-          transform: translateX(0);
-        }
+        .slide-left.show { opacity: 1; transform: translateX(0); }
 
         .slide-right {
           opacity: 0;
           transform: translateX(80px);
-          transition: all 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+          transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
         }
-
-        .slide-right.show {
-          opacity: 1;
-          transform: translateX(0);
-        }
+        .slide-right.show { opacity: 1; transform: translateX(0); }
 
         .fade-in {
           opacity: 0;
           transition: opacity 1s ease;
         }
+        .fade-in.show { opacity: 1; }
 
-        .fade-in.show {
-          opacity: 1;
-        }
-
-        /* Silk texture overlay */
         .silk {
           position: fixed;
           inset: 0;
-          background: 
-            radial-gradient(ellipse 80% 50% at 20% 40%, rgba(232,160,32,0.03), transparent),
+          background:
+            radial-gradient(ellipse 80% 50% at 20% 40%, rgba(232,160,32,0.04), transparent),
             radial-gradient(ellipse 60% 80% at 80% 60%, rgba(255,255,255,0.01), transparent);
           pointer-events: none;
           z-index: 0;
         }
 
-        /* Nav */
+        .grid-overlay {
+          position: fixed;
+          inset: 0;
+          background-image:
+            linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);
+          background-size: 80px 80px;
+          pointer-events: none;
+          z-index: 0;
+        }
+
+        .cursor-light {
+          position: fixed;
+          width: 400px;
+          height: 400px;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(232,160,32,0.04), transparent 70%);
+          pointer-events: none;
+          z-index: 1;
+          transition: transform 0.15s ease;
+        }
+
         .nav-item {
-          font-family: 'IBM Plex Mono', monospace;
+          font-family: 'Montserrat', sans-serif;
           font-size: 11px;
           color: #444;
-          letter-spacing: 0.1em;
+          letter-spacing: 0.12em;
           text-transform: uppercase;
+          font-weight: 600;
           cursor: pointer;
           transition: color 0.2s;
         }
-
         .nav-item:hover { color: #f0ece4; }
 
-        /* Buttons */
         .btn-primary {
-          background: #f0ece4;
+          background: #e8a020;
           color: #070707;
           border: none;
           padding: 16px 40px;
-          font-family: 'Syne', sans-serif;
-          font-size: 13px;
+          font-family: 'Montserrat', sans-serif;
+          font-size: 11px;
           font-weight: 800;
-          letter-spacing: 0.08em;
+          letter-spacing: 0.15em;
           text-transform: uppercase;
           cursor: pointer;
           transition: all 0.3s ease;
           border-radius: 2px;
         }
-
         .btn-primary:hover {
-          background: #e8a020;
+          background: #f0b030;
           transform: translateY(-3px);
-          box-shadow: 0 20px 60px rgba(232,160,32,0.25);
+          box-shadow: 0 20px 60px rgba(232,160,32,0.3);
         }
 
         .btn-outline {
@@ -186,25 +185,53 @@ function Landing() {
           color: #444;
           border: 1px solid #1e1e1e;
           padding: 16px 40px;
-          font-family: 'IBM Plex Mono', monospace;
+          font-family: 'Montserrat', sans-serif;
           font-size: 11px;
-          letter-spacing: 0.1em;
+          font-weight: 600;
+          letter-spacing: 0.12em;
           text-transform: uppercase;
           cursor: pointer;
           transition: all 0.3s ease;
           border-radius: 2px;
         }
+        .btn-outline:hover { border-color: #444; color: #f0ece4; }
 
-        .btn-outline:hover {
-          border-color: #444;
-          color: #f0ece4;
+        .hero-title {
+          font-family: 'Playfair Display', serif;
+          font-size: clamp(52px, 8vw, 112px);
+          font-weight: 800;
+          line-height: 0.92;
+          letter-spacing: -0.03em;
         }
 
-        /* Feature cards */
+        .hero-accent {
+          font-family: 'DM Serif Display', serif;
+          font-style: italic;
+          color: #e8a020;
+        }
+
+        .stat-val {
+          font-family: 'Playfair Display', serif;
+          font-size: clamp(44px, 5vw, 72px);
+          font-weight: 800;
+          letter-spacing: -0.03em;
+          color: #f0ece4;
+          line-height: 1;
+        }
+
+        .stat-label {
+          font-family: 'Montserrat', sans-serif;
+          font-size: 10px;
+          color: #333;
+          letter-spacing: 0.15em;
+          text-transform: uppercase;
+          font-weight: 600;
+          margin-top: 10px;
+        }
+
         .feat-card {
           border-top: 1px solid #141414;
-          padding: 40px 0;
-          cursor: default;
+          padding: 44px 0;
           transition: all 0.3s ease;
           position: relative;
           overflow: hidden;
@@ -218,57 +245,52 @@ function Landing() {
           width: 0;
           height: 1px;
           background: #e8a020;
-          transition: width 0.4s ease;
+          transition: width 0.5s ease;
         }
 
         .feat-card:hover::before { width: 100%; }
-
         .feat-card:hover .feat-num { color: #e8a020; }
 
         .feat-num {
-          font-family: 'IBM Plex Mono', monospace;
-          font-size: 11px;
+          font-family: 'Montserrat', sans-serif;
+          font-size: 10px;
           color: #2a2a2a;
-          letter-spacing: 0.1em;
-          margin-bottom: 16px;
+          letter-spacing: 0.2em;
+          font-weight: 700;
+          margin-bottom: 20px;
           transition: color 0.3s;
+          text-transform: uppercase;
         }
 
         .feat-title {
-          font-family: 'Syne', sans-serif;
-          font-size: 20px;
+          font-family: 'Playfair Display', serif;
+          font-size: 22px;
           font-weight: 700;
-          letter-spacing: -0.02em;
-          margin-bottom: 12px;
+          letter-spacing: -0.01em;
           color: #f0ece4;
         }
 
         .feat-desc {
-          font-family: 'IBM Plex Sans', sans-serif;
-          font-size: 14px;
+          font-family: 'Montserrat', sans-serif;
+          font-size: 13px;
           color: #3a3a3a;
-          line-height: 1.7;
-          font-weight: 300;
-        }
-
-        /* Marquee */
-        @keyframes marquee {
-          from { transform: translateX(0); }
-          to { transform: translateX(-50%); }
+          line-height: 1.8;
+          font-weight: 400;
         }
 
         .marquee-track {
           display: inline-flex;
-          animation: marquee 25s linear infinite;
+          animation: marquee 30s linear infinite;
           white-space: nowrap;
         }
 
         .marquee-item {
-          font-family: 'IBM Plex Mono', monospace;
-          font-size: 11px;
+          font-family: 'Montserrat', sans-serif;
+          font-size: 10px;
           color: #222;
-          letter-spacing: 0.15em;
+          letter-spacing: 0.2em;
           text-transform: uppercase;
+          font-weight: 600;
           padding: 0 48px;
           display: inline-flex;
           align-items: center;
@@ -281,130 +303,100 @@ function Landing() {
           border-radius: 50%;
           background: #e8a020;
           display: inline-block;
+          flex-shrink: 0;
         }
 
-        /* Cursor light */
-        .cursor-light {
-          position: fixed;
-          width: 400px;
-          height: 400px;
-          border-radius: 50%;
-          background: radial-gradient(circle, rgba(232,160,32,0.03), transparent 70%);
-          pointer-events: none;
-          z-index: 1;
-          transition: transform 0.15s ease;
-        }
-
-        /* Stats */
-        .stat-val {
-          font-family: 'Syne', sans-serif;
-          font-size: clamp(48px, 6vw, 80px);
-          font-weight: 800;
-          letter-spacing: -0.04em;
-          color: #f0ece4;
-          line-height: 1;
-        }
-
-        .stat-label {
-          font-family: 'IBM Plex Mono', monospace;
-          font-size: 11px;
-          color: #333;
-          letter-spacing: 0.1em;
+        .section-eyebrow {
+          font-family: 'Montserrat', sans-serif;
+          font-size: 10px;
+          color: #e8a020;
+          letter-spacing: 0.2em;
           text-transform: uppercase;
-          margin-top: 12px;
+          font-weight: 700;
+          margin-bottom: 24px;
         }
 
-        /* Horizontal scroll hint */
-        @keyframes arrowBounce {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(8px); }
+        .section-title {
+          font-family: 'Playfair Display', serif;
+          font-weight: 800;
+          letter-spacing: -0.03em;
+          line-height: 0.95;
         }
 
-        .scroll-arrow {
-          animation: arrowBounce 2s ease infinite;
-          font-size: 18px;
-          color: #333;
+        .body-text {
+          font-family: 'Montserrat', sans-serif;
+          font-size: 14px;
+          color: #3a3a3a;
+          line-height: 1.8;
+          font-weight: 400;
         }
 
-        /* Grid overlay */
-        .grid-overlay {
-          position: fixed;
-          inset: 0;
-          background-image: 
-            linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
-          background-size: 80px 80px;
-          pointer-events: none;
-          z-index: 0;
+        .table-header {
+          font-family: 'Montserrat', sans-serif;
+          font-size: 10px;
+          letter-spacing: 0.15em;
+          text-transform: uppercase;
+          font-weight: 700;
         }
 
-        @keyframes numberCount {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
+        .table-cell {
+          font-family: 'Montserrat', sans-serif;
+          font-size: 13px;
+          font-weight: 500;
         }
       `}</style>
 
-      {/* Loading screen */}
+      {/* Loader */}
       <div className={`loader ${loaded ? 'hide' : ''}`}>
-        <div style={{ position: 'relative' }}>
-          <div className="loader-text">
-            <span style={{ animationDelay: '0s' }}>SPY</span>
-            <span style={{ color: '#e8a020', animationDelay: '0.1s' }}>LENS</span>
-          </div>
+        <div className="loader-word">
+          <span style={{ animationDelay: '0s' }}>SPY</span>
+          <span style={{ color: '#e8a020', animationDelay: '0.15s' }}>LENS</span>
         </div>
         <div className="loader-line" />
         <div className="loader-sub">AI Competitor Intelligence</div>
       </div>
 
-      {/* Background effects */}
+      {/* BG Effects */}
       <div className="silk" />
       <div className="grid-overlay" />
       <div className="cursor-light" style={{ transform: `translate(${mousePos.x - 200}px, ${mousePos.y - 200}px)` }} />
 
       {/* Navbar */}
-      <nav className={`fade-in ${showContent ? 'show' : ''}`} style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, padding: '28px 60px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(7,7,7,0.9)', backdropFilter: 'blur(20px)', borderBottom: '1px solid #0f0f0f', transitionDelay: '0s' }}>
-        <div style={{ fontFamily: 'Syne, sans-serif', fontSize: '16px', fontWeight: '800', letterSpacing: '-0.02em' }}>
+      <nav className={`fade-in ${showContent ? 'show' : ''}`} style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, padding: '26px 60px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(7,7,7,0.92)', backdropFilter: 'blur(20px)', borderBottom: '1px solid #0f0f0f' }}>
+        <div style={{ fontFamily: 'Playfair Display, serif', fontSize: '20px', fontWeight: '800', letterSpacing: '-0.01em' }}>
           SPY<span style={{ color: '#e8a020' }}>LENS</span>
         </div>
         <div style={{ display: 'flex', gap: '48px', alignItems: 'center' }}>
-          <span className="nav-item">Product</span>
-          <span className="nav-item">Pricing</span>
-          <span className="nav-item">About</span>
+        <span className="nav-item" onClick={() => navigate('/pricing')}>Pricing</span>
+        <span className="nav-item" onClick={() => navigate('/about')}>About</span>
           <span className="nav-item" onClick={() => navigate('/login')}>Login</span>
-          <button className="btn-primary" style={{ padding: '10px 24px', fontSize: '11px' }} onClick={() => navigate('/dashboard')}>
+          <button className="btn-primary" style={{ padding: '10px 24px' }} onClick={() => navigate('/dashboard')}>
             Start Free
           </button>
         </div>
       </nav>
 
-      {/* Hero Section */}
+      {/* Hero */}
       <section style={{ position: 'relative', zIndex: 1, minHeight: '100vh', display: 'flex', alignItems: 'center', padding: '0 60px', paddingTop: '100px' }}>
         <div style={{ maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
 
-          {/* Top label */}
-          <div className={`slide-left ${showContent ? 'show' : ''}`} style={{ transitionDelay: '0.1s', display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '60px' }}>
-            <div style={{ width: '40px', height: '1px', background: '#e8a020' }} />
-            <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '11px', color: '#e8a020', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
-              AI Intelligence Platform — 2026
-            </span>
+          <div className={`slide-left ${showContent ? 'show' : ''}`} style={{ transitionDelay: '0.1s', display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '64px' }}>
+            <div style={{ width: '48px', height: '1px', background: '#e8a020' }} />
+            <span className="section-eyebrow" style={{ marginBottom: 0 }}>AI Intelligence Platform — 2026</span>
           </div>
 
-          {/* Main headline */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '80px', alignItems: 'end', marginBottom: '80px' }}>
-            <div>
-              <h1 className={`slide-up ${showContent ? 'show' : ''}`} style={{ fontFamily: 'Syne, sans-serif', fontSize: 'clamp(56px, 8vw, 120px)', fontWeight: '800', lineHeight: '0.9', letterSpacing: '-0.05em', transitionDelay: '0.2s' }}>
-                Know<br />
-                what your<br />
-                <span style={{ color: '#e8a020', fontStyle: 'italic' }}>rivals</span><br />
-                are doing.
-              </h1>
-            </div>
+            <h1 className={`hero-title slide-up ${showContent ? 'show' : ''}`} style={{ transitionDelay: '0.2s' }}>
+              Know<br />
+              what your<br />
+              <span className="hero-accent">rivals</span><br />
+              are doing.
+            </h1>
 
-            <div className={`slide-right ${showContent ? 'show' : ''}`} style={{ transitionDelay: '0.3s', paddingBottom: '8px' }}>
-              <p style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: '17px', color: '#3a3a3a', lineHeight: '1.8', fontWeight: '300', marginBottom: '48px', maxWidth: '420px' }}>
+            <div className={`slide-right ${showContent ? 'show' : ''}`} style={{ transitionDelay: '0.35s', paddingBottom: '8px' }}>
+              <p className="body-text" style={{ fontSize: '16px', marginBottom: '48px', maxWidth: '420px', color: '#555', lineHeight: '1.9' }}>
                 SpyLens uses AI to automatically monitor your competitors — tracking pricing changes, feature launches, and strategic moves. Delivered to your inbox every Monday.
               </p>
-
               <div style={{ display: 'flex', gap: '16px', marginBottom: '48px' }}>
                 <button className="btn-primary" onClick={() => navigate('/dashboard')}>
                   Analyze Free →
@@ -413,19 +405,18 @@ function Landing() {
                   Sign In
                 </button>
               </div>
-
-              <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '11px', color: '#222', letterSpacing: '0.1em' }}>
-                NO CARD REQUIRED &nbsp;·&nbsp; 2 COMPETITORS FREE &nbsp;·&nbsp; 60 SECOND SETUP
+              <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#252525', letterSpacing: '0.18em', fontWeight: '600', textTransform: 'uppercase' }}>
+                No card required &nbsp;·&nbsp; 2 competitors free &nbsp;·&nbsp; 60 second setup
               </div>
             </div>
           </div>
 
-          {/* Stats row */}
+          {/* Stats */}
           <div className={`slide-up ${showContent ? 'show' : ''}`} style={{ transitionDelay: '0.5s', borderTop: '1px solid #111', paddingTop: '60px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '48px' }}>
             {[
-              { val: '$20K', sub: 'Saved vs enterprise tools' },
+              { val: '$20K', sub: 'Saved vs enterprise' },
               { val: '60s', sub: 'Analysis time' },
-              { val: '10x', sub: 'Faster than manual' },
+              { val: '10x', sub: 'Faster research' },
               { val: '$49', sub: 'Starting per month' },
             ].map((s, i) => (
               <div key={i}>
@@ -434,7 +425,6 @@ function Landing() {
               </div>
             ))}
           </div>
-
         </div>
       </section>
 
@@ -444,46 +434,41 @@ function Landing() {
           {[...Array(8)].map((_, i) => (
             <span key={i} className="marquee-item">
               <span className="marquee-dot" />
-              COMPETITOR PRICING
+              Competitor Pricing
               <span className="marquee-dot" />
-              AI WEB SEARCH
+              AI Web Search
               <span className="marquee-dot" />
-              WEEKLY DIGEST
+              Weekly Digest
               <span className="marquee-dot" />
-              THREAT SCORING
+              Threat Scoring
               <span className="marquee-dot" />
-              REAL TIME INTEL
+              Real Time Intel
             </span>
           ))}
         </div>
       </div>
 
-      {/* Features section */}
+      {/* Features */}
       <section style={{ position: 'relative', zIndex: 1, maxWidth: '1400px', margin: '0 auto', padding: '160px 60px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '120px', alignItems: 'start' }}>
-
-          {/* Left sticky label */}
           <div style={{ position: 'sticky', top: '120px' }}>
-            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '11px', color: '#e8a020', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '24px' }}>
-              What we do
-            </div>
-            <h2 style={{ fontFamily: 'Syne, sans-serif', fontSize: 'clamp(36px, 4vw, 56px)', fontWeight: '800', letterSpacing: '-0.04em', lineHeight: '0.95', marginBottom: '32px' }}>
+            <div className="section-eyebrow">What We Do</div>
+            <h2 className="section-title" style={{ fontSize: 'clamp(36px, 4vw, 56px)', marginBottom: '32px' }}>
               Everything<br />
-              you need to<br />
-              <span style={{ color: '#e8a020', fontStyle: 'italic' }}>win</span>.
+              you need<br />
+              to <span className="hero-accent" style={{ fontSize: 'inherit' }}>win</span>.
             </h2>
-            <p style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: '14px', color: '#3a3a3a', lineHeight: '1.8', fontWeight: '300' }}>
+            <p className="body-text">
               Built for small businesses who need enterprise-grade intelligence at a price they can actually afford.
             </p>
           </div>
 
-          {/* Right features list */}
           <div>
             {[
               { num: '01', title: 'Real-time Analysis', desc: 'AI browses competitor websites live. No cached data. No guessing. Fresh intelligence returned in under 60 seconds every single time.' },
               { num: '02', title: 'Weekly Intelligence Digest', desc: 'Every Monday at 8am — a clean email showing exactly what changed with each of your competitors over the past week.' },
               { num: '03', title: 'Pricing Intelligence', desc: 'The moment a competitor changes their pricing, you know. Never lose a deal because you were charging wrong again.' },
-              { num: '04', title: 'Threat Scoring', desc: 'AI scores each competitor High, Medium, or Low threat based on their moves, growth signals, and positioning. Know where to focus.' },
+              { num: '04', title: 'Threat Scoring', desc: 'AI scores each competitor High, Medium, or Low threat based on their moves, growth signals, and positioning.' },
               { num: '05', title: 'Weakness Finder', desc: 'Every competitor has gaps. SpyLens finds them automatically and tells you exactly how to exploit them.' },
               { num: '06', title: '10x More Affordable', desc: 'Crayon costs $20K/year. Klue costs $15K/year. SpyLens starts at $49/month. Same intelligence. Fraction of the cost.' },
             ].map((f, i) => (
@@ -500,24 +485,25 @@ function Landing() {
         </div>
       </section>
 
-      {/* Comparison table */}
+      {/* Comparison */}
       <section style={{ position: 'relative', zIndex: 1, background: '#050505', borderTop: '1px solid #0f0f0f' }}>
         <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '160px 60px' }}>
           <div style={{ marginBottom: '80px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-            <h2 style={{ fontFamily: 'Syne, sans-serif', fontSize: 'clamp(36px, 5vw, 64px)', fontWeight: '800', letterSpacing: '-0.04em', lineHeight: '0.95' }}>
+            <h2 className="section-title" style={{ fontSize: 'clamp(36px, 5vw, 64px)' }}>
               The honest<br />
-              <span style={{ color: '#e8a020', fontStyle: 'italic' }}>comparison</span>.
+              <span className="hero-accent" style={{ fontSize: 'inherit' }}>comparison</span>.
             </h2>
-            <p style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: '14px', color: '#3a3a3a', maxWidth: '300px', lineHeight: '1.8', textAlign: 'right', fontWeight: '300' }}>
+            <p className="body-text" style={{ maxWidth: '300px', textAlign: 'right' }}>
               We're not afraid to show you how we stack up. The numbers speak for themselves.
             </p>
           </div>
 
-          {/* Table */}
           <div style={{ border: '1px solid #111', borderRadius: '4px', overflow: 'hidden' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', background: '#0a0a0a', borderBottom: '1px solid #111' }}>
               {['', 'SpyLens', 'Crayon', 'Manual'].map((h, i) => (
-                <div key={i} style={{ padding: '24px 32px', fontFamily: 'IBM Plex Mono, monospace', fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', color: i === 1 ? '#e8a020' : '#333', textAlign: i > 0 ? 'center' : 'left' }}>{h}</div>
+                <div key={i} style={{ padding: '24px 32px' }}>
+                  <span className="table-header" style={{ color: i === 1 ? '#e8a020' : '#333' }}>{h}</span>
+                </div>
               ))}
             </div>
             {[
@@ -529,14 +515,14 @@ function Landing() {
               ['Monthly cost', '$49', '$1,500+', '$0*'],
             ].map(([feat, a, b, c], i) => (
               <div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', borderBottom: i < 5 ? '1px solid #0d0d0d' : 'none', background: i % 2 === 0 ? 'transparent' : '#040404' }}>
-                <div style={{ padding: '22px 32px', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: '14px', color: '#444', fontWeight: '300' }}>{feat}</div>
-                <div style={{ padding: '22px 32px', textAlign: 'center', fontFamily: 'IBM Plex Mono, monospace', fontSize: '14px', color: '#e8a020' }}>{a}</div>
-                <div style={{ padding: '22px 32px', textAlign: 'center', fontFamily: 'IBM Plex Mono, monospace', fontSize: '14px', color: '#333' }}>{b}</div>
-                <div style={{ padding: '22px 32px', textAlign: 'center', fontFamily: 'IBM Plex Mono, monospace', fontSize: '14px', color: '#333' }}>{c}</div>
+                <div style={{ padding: '22px 32px' }}><span className="table-cell" style={{ color: '#444' }}>{feat}</span></div>
+                <div style={{ padding: '22px 32px', textAlign: 'center' }}><span className="table-cell" style={{ color: '#e8a020' }}>{a}</span></div>
+                <div style={{ padding: '22px 32px', textAlign: 'center' }}><span className="table-cell" style={{ color: '#333' }}>{b}</span></div>
+                <div style={{ padding: '22px 32px', textAlign: 'center' }}><span className="table-cell" style={{ color: '#333' }}>{c}</span></div>
               </div>
             ))}
           </div>
-          <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '11px', color: '#222', marginTop: '16px', letterSpacing: '0.08em' }}>
+          <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#222', marginTop: '16px', letterSpacing: '0.1em', fontWeight: '500' }}>
             *Manual research costs 5+ hours per week of your time
           </div>
         </div>
@@ -545,17 +531,17 @@ function Landing() {
       {/* Final CTA */}
       <section style={{ position: 'relative', zIndex: 1, maxWidth: '1400px', margin: '0 auto', padding: '160px 60px 120px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '60px' }}>
-          <h2 style={{ fontFamily: 'Syne, sans-serif', fontSize: 'clamp(52px, 9vw, 130px)', fontWeight: '800', letterSpacing: '-0.05em', lineHeight: '0.85', flex: 1, minWidth: '300px' }}>
+          <h2 className="section-title" style={{ fontSize: 'clamp(52px, 9vw, 120px)', flex: 1, minWidth: '300px' }}>
             Start<br />
-            <span style={{ color: '#e8a020', fontStyle: 'italic' }}>knowing</span><br />
+            <span className="hero-accent" style={{ fontSize: 'inherit' }}>knowing</span><br />
             today.
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'flex-end' }}>
-            <button className="btn-primary" style={{ fontSize: '14px', padding: '20px 56px' }} onClick={() => navigate('/dashboard')}>
+            <button className="btn-primary" style={{ fontSize: '12px', padding: '20px 56px' }} onClick={() => navigate('/dashboard')}>
               Analyze Competitors Free →
             </button>
-            <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '11px', color: '#222', letterSpacing: '0.1em' }}>
-              NO CREDIT CARD REQUIRED
+            <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#222', letterSpacing: '0.15em', fontWeight: '600', textTransform: 'uppercase' }}>
+              No credit card required
             </span>
           </div>
         </div>
@@ -563,7 +549,7 @@ function Landing() {
 
       {/* Footer */}
       <footer style={{ position: 'relative', zIndex: 1, borderTop: '1px solid #0f0f0f', padding: '40px 60px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ fontFamily: 'Syne, sans-serif', fontSize: '16px', fontWeight: '800', letterSpacing: '-0.02em' }}>
+        <div style={{ fontFamily: 'Playfair Display, serif', fontSize: '18px', fontWeight: '800' }}>
           SPY<span style={{ color: '#e8a020' }}>LENS</span>
         </div>
         <div style={{ display: 'flex', gap: '48px' }}>
@@ -571,8 +557,8 @@ function Landing() {
           <span className="nav-item">Terms</span>
           <span className="nav-item">Contact</span>
         </div>
-        <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '11px', color: '#222', letterSpacing: '0.08em' }}>
-          © 2026 SPYLENS
+        <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#222', letterSpacing: '0.12em', fontWeight: '600', textTransform: 'uppercase' }}>
+          © 2026 SpyLens
         </div>
       </footer>
 
