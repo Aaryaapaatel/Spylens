@@ -29,19 +29,19 @@ function Login() {
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: {
-            data: { full_name: name }
-          }
+          options: { data: { full_name: name } }
         });
         if (error) throw error;
-        setMessage('Account created! Please check your email to verify.');
+        setMessage('Account created! You can now sign in.');
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password
         });
         if (error) throw error;
-        navigate('/dashboard');
+        if (data.session) {
+          navigate('/dashboard');
+        }
       }
     } catch (err) {
       setError(err.message);
