@@ -6,7 +6,7 @@ app = FastAPI(title="SpyLens API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -17,4 +17,8 @@ app.include_router(analysis.router, prefix="/api/analysis", tags=["analysis"])
 
 @app.get("/")
 def root():
-    return {"message": "SpyLens API is running!"}
+    return {"message": "SpyLens API is running!", "status": "active"}
+
+@app.get("/health")
+def health():
+    return {"status": "healthy"}

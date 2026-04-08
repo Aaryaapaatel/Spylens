@@ -8,11 +8,11 @@ load_dotenv()
 client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
 async def analyze_competitors(company_name: str, competitor_urls: list[str]):
-    
+
     urls_text = "\n".join([f"- {url}" for url in competitor_urls])
-    
-    prompt = f"""You are a competitive intelligence analyst. 
-    
+
+    prompt = f"""You are a world class competitive intelligence analyst.
+
 A company called "{company_name}" wants to analyze their competitors.
 
 Analyze each of these competitor websites:
@@ -30,7 +30,7 @@ For EACH competitor, search the web and return a JSON array with this exact stru
     "recent_moves": "What they have done recently - launches, changes, news",
     "main_weakness": "Their biggest weakness or gap",
     "threat_level": "High, Medium, or Low",
-    "opportunity": "How {company_name} can beat them"
+    "opportunity": "How {company_name} can beat them specifically"
   }}
 ]
 
@@ -42,12 +42,12 @@ Return ONLY the JSON array. No extra text. No markdown. Just the raw JSON."""
         tools=[{"type": "web_search_20250305", "name": "web_search"}],
         messages=[{"role": "user", "content": prompt}]
     )
-    
+
     response_text = ""
     for block in message.content:
         if hasattr(block, "text"):
             response_text += block.text
-    
+
     try:
         competitors = json.loads(response_text)
         return competitors
