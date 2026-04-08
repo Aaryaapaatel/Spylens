@@ -1,19 +1,50 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../services/supabase';
 
 function Landing() {
   const navigate = useNavigate();
   const [loaded, setLoaded] = useState(false);
   const [showContent, setShowContent] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [user, setUser] = useState(null);
+  const [plan, setPlan] = useState('free');
+  const [analysesLeft, setAnalysesLeft] = useState(2);
 
   useEffect(() => {
     const handleMouse = (e) => setMousePos({ x: e.clientX, y: e.clientY });
     window.addEventListener('mousemove', handleMouse);
     setTimeout(() => setLoaded(true), 2000);
     setTimeout(() => setShowContent(true), 2800);
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setUser(session.user);
+        supabase
+          .from('profiles')
+          .select('plan')
+          .eq('id', session.user.id)
+          .single()
+          .then(({ data }) => {
+            if (data) {
+              setPlan(data.plan || 'free');
+              if (data.plan === 'pro' || data.plan === 'business' || data.plan === 'agency') {
+                setAnalysesLeft(999);
+              } else {
+                setAnalysesLeft(2);
+              }
+            }
+          });
+      }
+    });
+
     return () => window.removeEventListener('mousemove', handleMouse);
   }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+  };
 
   return (
     <div style={{ minHeight: '100vh', background: '#070707', color: '#f0ece4', overflowX: 'hidden', overflowY: 'auto' }}>
@@ -67,6 +98,7 @@ function Landing() {
         .body-text { font-family: 'Montserrat', sans-serif; font-size: 14px; color: #3a3a3a; line-height: 1.8; font-weight: 400; }
         .table-header { font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 700; }
         .table-cell { font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 500; }
+        .user-banner { background: rgba(232,160,32,0.06); border-bottom: 1px solid rgba(232,160,32,0.1); padding: 10px 60px; display: flex; align-items: center; justify-content: space-between; position: fixed; top: 73px; left: 0; right: 0; z-index: 99; backdrop-filter: blur(20px); }
       `}</style>
 
       {/* Loader */}
@@ -84,22 +116,77 @@ function Landing() {
       <div className="cursor-light" style={{ transform: `translate(${mousePos.x - 200}px, ${mousePos.y - 200}px)` }} />
 
       {/* Navbar */}
-      <nav className={`fade-in ${showContent ? 'show' : ''}`} style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, padding: '26px 60px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(7,7,7,0.92)', backdropFilter: 'blur(20px)', borderBottom: '1px solid #0f0f0f' }}>
+      <nav className={`fade-in ${showContent ? 'show' : ''}`} style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, padding: '20px 60px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(7,7,7,0.92)', backdropFilter: 'blur(20px)', borderBottom: '1px solid #0f0f0f' }}>
         <div style={{ fontFamily: 'Playfair Display, serif', fontSize: '20px', fontWeight: '800', letterSpacing: '-0.01em' }}>
           SPY<span style={{ color: '#e8a020' }}>LENS</span>
         </div>
-        <div style={{ display: 'flex', gap: '48px', alignItems: 'center' }}>
-          <span className="nav-item" onClick={() => navigate('/pricing')}>Pricing</span>
-          <span className="nav-item" onClick={() => navigate('/about')}>About</span>
-          <span className="nav-item" onClick={() => navigate('/login')}>Login</span>
-          <button className="btn-primary" style={{ padding: '10px 24px' }} onClick={() => navigate('/dashboard')}>
-            Start Free
-          </button>
+        <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
+          {user ? (
+            <>
+              <div style={{ background: 'rgba(232,160,32,0.1)', border: '1px solid rgba(232,160,32,0.2)', borderRadius: '2px', padding: '6px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#e8a020', letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: '700' }}>
+                  {plan.toUpperCase()} PLAN
+                </span>
+                {plan === 'free' && (
+                  <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#666', letterSpacing: '0.08em' }}>
+                    · {analysesLeft} left
+                  </span>
+                )}
+              </div>
+              <button className="btn-outline" style={{ padding: '8px 20px' }} onClick={() => navigate('/dashboard')}>
+                History
+              </button>
+              <button className="btn-primary" style={{ padding: '8px 20px' }} onClick={() => navigate('/dashboard')}>
+                Analyse Now →
+              </button>
+              <button onClick={handleLogout} style={{ background: 'none', border: 'none', color: '#444', fontFamily: 'Montserrat, sans-serif', fontSize: '11px', fontWeight: '600', letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer' }}
+                onMouseOver={e => e.target.style.color = '#ef4444'}
+                onMouseOut={e => e.target.style.color = '#444'}>
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <span className="nav-item" onClick={() => navigate('/pricing')}>Pricing</span>
+              <span className="nav-item" onClick={() => navigate('/about')}>About</span>
+              <span className="nav-item" onClick={() => navigate('/login')}>Login</span>
+              <button className="btn-primary" style={{ padding: '10px 24px' }} onClick={() => navigate('/login')}>
+                Start Free
+              </button>
+            </>
+          )}
         </div>
       </nav>
 
+      {/* Logged in user banner */}
+      {user && showContent && (
+        <div className="user-banner" style={{ top: '73px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }} />
+            <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '12px', color: '#555', letterSpacing: '0.08em' }}>
+              Welcome back, <span style={{ color: '#f0ece4', fontWeight: '600' }}>{user.email}</span>
+            </span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+            {plan === 'free' && (
+              <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '11px', color: '#555' }}>
+                <span style={{ color: '#e8a020', fontWeight: '700' }}>{analysesLeft}</span> free analyses remaining
+                <button onClick={() => navigate('/pricing')} style={{ background: 'none', border: 'none', color: '#e8a020', fontFamily: 'Montserrat, sans-serif', fontSize: '11px', fontWeight: '700', cursor: 'pointer', marginLeft: '12px', textDecoration: 'underline' }}>
+                  Upgrade →
+                </button>
+              </span>
+            )}
+            {plan !== 'free' && (
+              <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '11px', color: '#555' }}>
+                <span style={{ color: '#10b981', fontWeight: '700' }}>Unlimited</span> analyses available
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Hero */}
-      <section style={{ position: 'relative', zIndex: 1, minHeight: '100vh', display: 'flex', alignItems: 'center', padding: '0 60px', paddingTop: '100px' }}>
+      <section style={{ position: 'relative', zIndex: 1, minHeight: '100vh', display: 'flex', alignItems: 'center', padding: '0 60px', paddingTop: user ? '160px' : '100px' }}>
         <div style={{ maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
           <div className={`slide-left ${showContent ? 'show' : ''}`} style={{ transitionDelay: '0.1s', display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '64px' }}>
             <div style={{ width: '48px', height: '1px', background: '#e8a020' }} />
@@ -108,22 +195,58 @@ function Landing() {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '80px', alignItems: 'end', marginBottom: '80px' }}>
             <h1 className={`hero-title slide-up ${showContent ? 'show' : ''}`} style={{ transitionDelay: '0.2s' }}>
-              Know<br />what your<br />
-              <span className="hero-accent">rivals</span><br />
-              are doing.
+              {user ? (
+                <>Ready to<br />outsmart your<br /><span className="hero-accent">rivals</span>?</>
+              ) : (
+                <>Know<br />what your<br /><span className="hero-accent">rivals</span><br />are doing.</>
+              )}
             </h1>
 
             <div className={`slide-right ${showContent ? 'show' : ''}`} style={{ transitionDelay: '0.35s', paddingBottom: '8px' }}>
-              <p className="body-text" style={{ fontSize: '16px', marginBottom: '48px', maxWidth: '420px', color: '#555', lineHeight: '1.9' }}>
-                SpyLens uses AI to automatically monitor your competitors — tracking pricing changes, feature launches, and strategic moves. Delivered to your inbox every Monday.
-              </p>
-              <div style={{ display: 'flex', gap: '16px', marginBottom: '48px' }}>
-                <button className="btn-primary" onClick={() => navigate('/dashboard')}>Analyze Free →</button>
-                <button className="btn-outline" onClick={() => navigate('/login')}>Sign In</button>
-              </div>
-              <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#252525', letterSpacing: '0.18em', fontWeight: '600', textTransform: 'uppercase' }}>
-                No card required &nbsp;·&nbsp; 2 competitors free &nbsp;·&nbsp; 60 second setup
-              </div>
+              {user ? (
+                <>
+                  {/* Logged in hero content */}
+                  <div style={{ background: '#0c0c0c', border: '1px solid #161616', borderRadius: '4px', padding: '32px', marginBottom: '32px' }}>
+                    <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#e8a020', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: '700', marginBottom: '20px' }}>
+                      Your Account
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+                      <div style={{ background: '#111', borderRadius: '2px', padding: '16px' }}>
+                        <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#444', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '8px' }}>Current Plan</div>
+                        <div style={{ fontFamily: 'Playfair Display, serif', fontSize: '24px', fontWeight: '700', color: '#e8a020' }}>{plan.charAt(0).toUpperCase() + plan.slice(1)}</div>
+                      </div>
+                      <div style={{ background: '#111', borderRadius: '2px', padding: '16px' }}>
+                        <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#444', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '8px' }}>Analyses Left</div>
+                        <div style={{ fontFamily: 'Playfair Display, serif', fontSize: '24px', fontWeight: '700', color: plan === 'free' ? '#f0ece4' : '#10b981' }}>
+                          {plan === 'free' ? analysesLeft : '∞'}
+                        </div>
+                      </div>
+                    </div>
+                    {plan === 'free' && (
+                      <button onClick={() => navigate('/pricing')} style={{ width: '100%', padding: '12px', background: 'none', border: '1px solid rgba(232,160,32,0.3)', borderRadius: '2px', color: '#e8a020', fontFamily: 'Montserrat, sans-serif', fontSize: '11px', fontWeight: '700', letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer', transition: 'all 0.2s' }}>
+                        Upgrade to Pro — ₹399/month →
+                      </button>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: '16px' }}>
+                    <button className="btn-primary" onClick={() => navigate('/dashboard')}>Analyse Now →</button>
+                    <button className="btn-outline" onClick={() => navigate('/dashboard')}>View History</button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="body-text" style={{ fontSize: '16px', marginBottom: '48px', maxWidth: '420px', color: '#555', lineHeight: '1.9' }}>
+                    SpyLens uses AI to automatically monitor your competitors — tracking pricing changes, feature launches, and strategic moves. Delivered to your inbox every Monday.
+                  </p>
+                  <div style={{ display: 'flex', gap: '16px', marginBottom: '48px' }}>
+                    <button className="btn-primary" onClick={() => navigate('/login')}>Analyze Free →</button>
+                    <button className="btn-outline" onClick={() => navigate('/login')}>Sign In</button>
+                  </div>
+                  <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#252525', letterSpacing: '0.18em', fontWeight: '600', textTransform: 'uppercase' }}>
+                    No card required &nbsp;·&nbsp; 2 competitors free &nbsp;·&nbsp; 60 second setup
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -133,7 +256,7 @@ function Landing() {
               { val: '$20K', sub: 'Saved vs enterprise' },
               { val: '60s', sub: 'Analysis time' },
               { val: '10x', sub: 'Faster research' },
-              { val: '$49', sub: 'Starting per month' },
+              { val: '₹399', sub: 'Pro plan per month' },
             ].map((s, i) => (
               <div key={i}>
                 <div className="stat-val">{s.val}</div>
@@ -176,7 +299,7 @@ function Landing() {
               { num: '03', title: 'Pricing Intelligence', desc: 'The moment a competitor changes their pricing, you know. Never lose a deal because you were charging wrong again.' },
               { num: '04', title: 'Threat Scoring', desc: 'AI scores each competitor High, Medium, or Low threat based on their moves, growth signals, and positioning.' },
               { num: '05', title: 'Weakness Finder', desc: 'Every competitor has gaps. SpyLens finds them automatically and tells you exactly how to exploit them.' },
-              { num: '06', title: '10x More Affordable', desc: 'Crayon costs $20K/year. Klue costs $15K/year. SpyLens starts at $49/month. Same intelligence. Fraction of the cost.' },
+              { num: '06', title: '10x More Affordable', desc: 'Crayon costs $20K/year. Klue costs $15K/year. SpyLens starts at ₹399/month. Same intelligence. Fraction of the cost.' },
             ].map((f, i) => (
               <div key={i} className="feat-card">
                 <div className="feat-num">{f.num}</div>
@@ -216,7 +339,7 @@ function Landing() {
               ['Weekly digest', '✓', '✓', '✗'],
               ['Pricing tracking', '✓', '✓', '✗'],
               ['Setup time', '60 sec', '2 weeks', '0'],
-              ['Monthly cost', '$49', '$1,500+', '$0*'],
+              ['Monthly cost', '₹399', '₹1,25,000+', '₹0*'],
             ].map(([feat, a, b, c], i) => (
               <div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', borderBottom: i < 5 ? '1px solid #0d0d0d' : 'none', background: i % 2 === 0 ? 'transparent' : '#040404' }}>
                 <div style={{ padding: '22px 32px' }}><span className="table-cell" style={{ color: '#444' }}>{feat}</span></div>
@@ -233,15 +356,27 @@ function Landing() {
       <section id="cta" style={{ position: 'relative', zIndex: 1, maxWidth: '1400px', margin: '0 auto', padding: '160px 60px 120px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '60px' }}>
           <h2 className="section-title" style={{ fontSize: 'clamp(52px, 9vw, 120px)', flex: 1, minWidth: '300px' }}>
-            Start<br /><span className="hero-accent" style={{ fontSize: 'inherit' }}>knowing</span><br />today.
+            {user ? (
+              <>Keep<br /><span className="hero-accent" style={{ fontSize: 'inherit' }}>winning</span><br />today.</>
+            ) : (
+              <>Start<br /><span className="hero-accent" style={{ fontSize: 'inherit' }}>knowing</span><br />today.</>
+            )}
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'flex-end' }}>
-            <button className="btn-primary" style={{ fontSize: '12px', padding: '20px 56px' }} onClick={() => navigate('/dashboard')}>
-              Analyze Competitors Free →
-            </button>
-            <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#222', letterSpacing: '0.15em', fontWeight: '600', textTransform: 'uppercase' }}>
-              No credit card required
-            </span>
+            {user ? (
+              <button className="btn-primary" style={{ fontSize: '12px', padding: '20px 56px' }} onClick={() => navigate('/dashboard')}>
+                Analyse Competitors Now →
+              </button>
+            ) : (
+              <>
+                <button className="btn-primary" style={{ fontSize: '12px', padding: '20px 56px' }} onClick={() => navigate('/login')}>
+                  Analyze Competitors Free →
+                </button>
+                <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#222', letterSpacing: '0.15em', fontWeight: '600', textTransform: 'uppercase' }}>
+                  No credit card required
+                </span>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -254,7 +389,7 @@ function Landing() {
         <div style={{ display: 'flex', gap: '48px' }}>
           <span className="nav-item" onClick={() => navigate('/pricing')}>Pricing</span>
           <span className="nav-item" onClick={() => navigate('/about')}>About</span>
-          <span className="nav-item" onClick={() => navigate('/login')}>Login</span>
+          {!user && <span className="nav-item" onClick={() => navigate('/login')}>Login</span>}
         </div>
         <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#222', letterSpacing: '0.12em', fontWeight: '600', textTransform: 'uppercase' }}>
           © 2026 SpyLens
