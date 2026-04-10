@@ -10,6 +10,7 @@ function Landing() {
   const [user, setUser] = useState(null);
   const [plan, setPlan] = useState('free');
   const [analysesLeft, setAnalysesLeft] = useState(2);
+  const [userName, setUserName] = useState('');
 
   useEffect(() => {
     const handleMouse = (e) => setMousePos({ x: e.clientX, y: e.clientY });
@@ -20,14 +21,19 @@ function Landing() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setUser(session.user);
+        setUserName(
+          session.user.user_metadata?.full_name ||
+          session.user.email.split('@')[0]
+        );
         supabase
           .from('profiles')
-          .select('plan')
+          .select('plan, full_name')
           .eq('id', session.user.id)
           .single()
           .then(({ data }) => {
             if (data) {
               setPlan(data.plan || 'free');
+              if (data.full_name) setUserName(data.full_name);
               if (data.plan === 'pro' || data.plan === 'business' || data.plan === 'agency') {
                 setAnalysesLeft(999);
               } else {
@@ -44,6 +50,7 @@ function Landing() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
+    setUserName('');
   };
 
   return (
@@ -52,81 +59,22 @@ function Landing() {
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;700;800;900&family=Playfair+Display:ital,wght@0,700;0,800;1,700;1,800&family=DM+Serif+Display:ital@0;1&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Montserrat', sans-serif; }
 
-        /* ── LOADER ── */
-        .loader {
-          position: fixed; inset: 0; background: #000;
-          z-index: 1000; display: flex; align-items: center; justify-content: center;
-          flex-direction: column; gap: 32px;
-          transition: opacity 1s ease, transform 1s cubic-bezier(0.76, 0, 0.24, 1);
-          overflow: hidden;
-        }
+        .loader { position: fixed; inset: 0; background: #000; z-index: 1000; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 32px; transition: opacity 1s ease, transform 1s cubic-bezier(0.76, 0, 0.24, 1); overflow: hidden; }
         .loader.hide { opacity: 0; transform: translateY(-100%); pointer-events: none; }
-
-        .loader-bg-glow {
-          position: absolute;
-          width: 800px; height: 800px;
-          background: radial-gradient(circle, rgba(232,160,32,0.12) 0%, transparent 65%);
-          border-radius: 50%;
-          animation: loaderPulse 2.5s ease infinite;
-        }
-
-        .loader-grid {
-          position: absolute; inset: 0;
-          background-image:
-            linear-gradient(rgba(232,160,32,0.04) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(232,160,32,0.04) 1px, transparent 1px);
-          background-size: 60px 60px;
-        }
-
-        .loader-corner {
-          position: absolute;
-          width: 60px; height: 60px;
-          border-color: rgba(232,160,32,0.3);
-          border-style: solid;
-          border-width: 0;
-          animation: cornerFade 0.8s ease 0.3s both;
-        }
+        .loader-bg-glow { position: absolute; width: 800px; height: 800px; background: radial-gradient(circle, rgba(232,160,32,0.12) 0%, transparent 65%); border-radius: 50%; animation: loaderPulse 2.5s ease infinite; }
+        .loader-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(232,160,32,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(232,160,32,0.04) 1px, transparent 1px); background-size: 60px 60px; }
+        .loader-corner { position: absolute; width: 60px; height: 60px; border-color: rgba(232,160,32,0.3); border-style: solid; border-width: 0; animation: cornerFade 0.8s ease 0.3s both; }
         .loader-corner.tl { top: 40px; left: 40px; border-top-width: 1px; border-left-width: 1px; }
         .loader-corner.tr { top: 40px; right: 40px; border-top-width: 1px; border-right-width: 1px; }
         .loader-corner.bl { bottom: 40px; left: 40px; border-bottom-width: 1px; border-left-width: 1px; }
         .loader-corner.br { bottom: 40px; right: 40px; border-bottom-width: 1px; border-right-width: 1px; }
-
         .loader-content { position: relative; z-index: 2; text-align: center; }
-
-        .loader-word {
-          font-family: 'Playfair Display', serif;
-          font-size: clamp(72px, 14vw, 180px);
-          font-weight: 800; letter-spacing: -0.04em; line-height: 1;
-          overflow: hidden; display: block;
-        }
-        .loader-word span {
-          display: inline-block;
-          animation: revealUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-          transform: translateY(110%);
-        }
-
-        .loader-line {
-          width: 0; height: 1px; margin: 24px auto;
-          background: linear-gradient(90deg, transparent, #e8a020, transparent);
-          animation: expandLine 1.8s ease 0.4s forwards;
-          max-width: 400px;
-        }
-
-        .loader-sub {
-          font-family: 'Montserrat', sans-serif;
-          font-size: 11px; color: #444;
-          letter-spacing: 0.35em; text-transform: uppercase; font-weight: 600;
-          animation: fadeIn 1s ease 0.8s both;
-        }
-
-        .loader-dots {
-          display: flex; gap: 8px; justify-content: center; margin-top: 40px;
-          animation: fadeIn 1s ease 1s both;
-        }
-        .loader-dot {
-          width: 4px; height: 4px; border-radius: 50%; background: #e8a020;
-          animation: dotPulse 1.2s ease infinite;
-        }
+        .loader-word { font-family: 'Playfair Display', serif; font-size: clamp(72px, 14vw, 180px); font-weight: 800; letter-spacing: -0.04em; line-height: 1; overflow: hidden; display: block; }
+        .loader-word span { display: inline-block; animation: revealUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards; transform: translateY(110%); }
+        .loader-line { width: 0; height: 1px; margin: 24px auto; background: linear-gradient(90deg, transparent, #e8a020, transparent); animation: expandLine 1.8s ease 0.4s forwards; max-width: 400px; }
+        .loader-sub { font-family: 'Montserrat', sans-serif; font-size: 11px; color: #444; letter-spacing: 0.35em; text-transform: uppercase; font-weight: 600; animation: fadeIn 1s ease 0.8s both; }
+        .loader-dots { display: flex; gap: 8px; justify-content: center; margin-top: 40px; animation: fadeIn 1s ease 1s both; }
+        .loader-dot { width: 4px; height: 4px; border-radius: 50%; background: #e8a020; animation: dotPulse 1.2s ease infinite; }
         .loader-dot:nth-child(2) { animation-delay: 0.2s; }
         .loader-dot:nth-child(3) { animation-delay: 0.4s; }
 
@@ -182,7 +130,7 @@ function Landing() {
         .user-banner { background: rgba(232,160,32,0.06); border-bottom: 1px solid rgba(232,160,32,0.1); padding: 10px 60px; display: flex; align-items: center; justify-content: space-between; position: fixed; top: 73px; left: 0; right: 0; z-index: 99; backdrop-filter: blur(20px); }
       `}</style>
 
-      {/* ── LOADER ── */}
+      {/* Loader */}
       <div className={`loader ${loaded ? 'hide' : ''}`}>
         <div className="loader-bg-glow" />
         <div className="loader-grid" />
@@ -190,7 +138,6 @@ function Landing() {
         <div className="loader-corner tr" />
         <div className="loader-corner bl" />
         <div className="loader-corner br" />
-
         <div className="loader-content">
           <div className="loader-word">
             <span style={{ color: '#f0ece4', animationDelay: '0s' }}>SPY</span>
@@ -251,7 +198,7 @@ function Landing() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }} />
             <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '12px', color: '#555', letterSpacing: '0.08em' }}>
-              Welcome back, <span style={{ color: '#f0ece4', fontWeight: '600' }}>{user.email}</span>
+              Welcome back, <span style={{ color: '#f0ece4', fontWeight: '600' }}>{userName}</span>
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
@@ -395,9 +342,7 @@ function Landing() {
             <h2 className="section-title" style={{ fontSize: 'clamp(36px, 5vw, 64px)' }}>
               The honest<br /><span className="hero-accent" style={{ fontSize: 'inherit' }}>comparison</span>.
             </h2>
-            <p className="body-text" style={{ maxWidth: '300px', textAlign: 'right' }}>
-              We're not afraid to show you how we stack up. The numbers speak for themselves.
-            </p>
+            <p className="body-text" style={{ maxWidth: '300px', textAlign: 'right' }}>We're not afraid to show you how we stack up. The numbers speak for themselves.</p>
           </div>
           <div style={{ border: '1px solid #111', borderRadius: '4px', overflow: 'hidden' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', background: '#0a0a0a', borderBottom: '1px solid #111' }}>
