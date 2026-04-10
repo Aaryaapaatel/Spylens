@@ -98,6 +98,8 @@ function Landing() {
         .body-text { font-family: 'Montserrat', sans-serif; font-size: 14px; color: #3a3a3a; line-height: 1.8; font-weight: 400; }
         .table-header { font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 700; }
         .table-cell { font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 500; }
+        .plan-badge { background: rgba(232,160,32,0.1); border: 1px solid rgba(232,160,32,0.2); border-radius: 2px; padding: 6px 16px; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s ease; }
+        .plan-badge:hover { background: rgba(232,160,32,0.2); border-color: rgba(232,160,32,0.4); }
         .user-banner { background: rgba(232,160,32,0.06); border-bottom: 1px solid rgba(232,160,32,0.1); padding: 10px 60px; display: flex; align-items: center; justify-content: space-between; position: fixed; top: 73px; left: 0; right: 0; z-index: 99; backdrop-filter: blur(20px); }
       `}</style>
 
@@ -123,7 +125,7 @@ function Landing() {
         <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
           {user ? (
             <>
-              <div style={{ background: 'rgba(232,160,32,0.1)', border: '1px solid rgba(232,160,32,0.2)', borderRadius: '2px', padding: '6px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div className="plan-badge" onClick={() => navigate('/pricing')}>
                 <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#e8a020', letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: '700' }}>
                   {plan.toUpperCase()} PLAN
                 </span>
@@ -160,7 +162,7 @@ function Landing() {
 
       {/* Logged in user banner */}
       {user && showContent && (
-        <div className="user-banner" style={{ top: '73px' }}>
+        <div className="user-banner">
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }} />
             <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '12px', color: '#555', letterSpacing: '0.08em' }}>
@@ -205,7 +207,6 @@ function Landing() {
             <div className={`slide-right ${showContent ? 'show' : ''}`} style={{ transitionDelay: '0.35s', paddingBottom: '8px' }}>
               {user ? (
                 <>
-                  {/* Logged in hero content */}
                   <div style={{ background: '#0c0c0c', border: '1px solid #161616', borderRadius: '4px', padding: '32px', marginBottom: '32px' }}>
                     <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#e8a020', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: '700', marginBottom: '20px' }}>
                       Your Account
