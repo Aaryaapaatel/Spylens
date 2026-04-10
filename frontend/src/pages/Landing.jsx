@@ -14,8 +14,8 @@ function Landing() {
   useEffect(() => {
     const handleMouse = (e) => setMousePos({ x: e.clientX, y: e.clientY });
     window.addEventListener('mousemove', handleMouse);
-    setTimeout(() => setLoaded(true), 2000);
-    setTimeout(() => setShowContent(true), 2800);
+    setTimeout(() => setLoaded(true), 2500);
+    setTimeout(() => setShowContent(true), 3200);
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
@@ -51,17 +51,94 @@ function Landing() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;700;800;900&family=Playfair+Display:ital,wght@0,700;0,800;1,700;1,800&family=DM+Serif+Display:ital@0;1&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Montserrat', sans-serif; }
-        .loader { position: fixed; inset: 0; background: #070707; z-index: 1000; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 24px; transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.76, 0, 0.24, 1); }
+
+        /* ── LOADER ── */
+        .loader {
+          position: fixed; inset: 0; background: #000;
+          z-index: 1000; display: flex; align-items: center; justify-content: center;
+          flex-direction: column; gap: 32px;
+          transition: opacity 1s ease, transform 1s cubic-bezier(0.76, 0, 0.24, 1);
+          overflow: hidden;
+        }
         .loader.hide { opacity: 0; transform: translateY(-100%); pointer-events: none; }
-        .loader-word { font-family: 'Playfair Display', serif; font-size: clamp(56px, 12vw, 140px); font-weight: 800; letter-spacing: -0.03em; color: #f0ece4; overflow: hidden; }
-        .loader-word span { display: inline-block; animation: revealUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards; transform: translateY(110%); }
-        .loader-line { width: 0; height: 1px; background: #e8a020; animation: expandLine 1.5s ease forwards; max-width: 180px; }
-        .loader-sub { font-family: 'Montserrat', sans-serif; font-size: 11px; color: #333; letter-spacing: 0.25em; text-transform: uppercase; font-weight: 500; animation: fadeIn 1s ease 0.6s both; }
-        @keyframes expandLine { to { width: 180px; } }
+
+        .loader-bg-glow {
+          position: absolute;
+          width: 800px; height: 800px;
+          background: radial-gradient(circle, rgba(232,160,32,0.12) 0%, transparent 65%);
+          border-radius: 50%;
+          animation: loaderPulse 2.5s ease infinite;
+        }
+
+        .loader-grid {
+          position: absolute; inset: 0;
+          background-image:
+            linear-gradient(rgba(232,160,32,0.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(232,160,32,0.04) 1px, transparent 1px);
+          background-size: 60px 60px;
+        }
+
+        .loader-corner {
+          position: absolute;
+          width: 60px; height: 60px;
+          border-color: rgba(232,160,32,0.3);
+          border-style: solid;
+          border-width: 0;
+          animation: cornerFade 0.8s ease 0.3s both;
+        }
+        .loader-corner.tl { top: 40px; left: 40px; border-top-width: 1px; border-left-width: 1px; }
+        .loader-corner.tr { top: 40px; right: 40px; border-top-width: 1px; border-right-width: 1px; }
+        .loader-corner.bl { bottom: 40px; left: 40px; border-bottom-width: 1px; border-left-width: 1px; }
+        .loader-corner.br { bottom: 40px; right: 40px; border-bottom-width: 1px; border-right-width: 1px; }
+
+        .loader-content { position: relative; z-index: 2; text-align: center; }
+
+        .loader-word {
+          font-family: 'Playfair Display', serif;
+          font-size: clamp(72px, 14vw, 180px);
+          font-weight: 800; letter-spacing: -0.04em; line-height: 1;
+          overflow: hidden; display: block;
+        }
+        .loader-word span {
+          display: inline-block;
+          animation: revealUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          transform: translateY(110%);
+        }
+
+        .loader-line {
+          width: 0; height: 1px; margin: 24px auto;
+          background: linear-gradient(90deg, transparent, #e8a020, transparent);
+          animation: expandLine 1.8s ease 0.4s forwards;
+          max-width: 400px;
+        }
+
+        .loader-sub {
+          font-family: 'Montserrat', sans-serif;
+          font-size: 11px; color: #444;
+          letter-spacing: 0.35em; text-transform: uppercase; font-weight: 600;
+          animation: fadeIn 1s ease 0.8s both;
+        }
+
+        .loader-dots {
+          display: flex; gap: 8px; justify-content: center; margin-top: 40px;
+          animation: fadeIn 1s ease 1s both;
+        }
+        .loader-dot {
+          width: 4px; height: 4px; border-radius: 50%; background: #e8a020;
+          animation: dotPulse 1.2s ease infinite;
+        }
+        .loader-dot:nth-child(2) { animation-delay: 0.2s; }
+        .loader-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes loaderPulse { 0%, 100% { transform: scale(1); opacity: 0.6; } 50% { transform: scale(1.15); opacity: 1; } }
+        @keyframes cornerFade { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes expandLine { to { width: 400px; } }
         @keyframes revealUp { to { transform: translateY(0); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes dotPulse { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 1; transform: scale(1.4); } }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(70px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
         .slide-up { opacity: 0; transform: translateY(80px); transition: all 1s cubic-bezier(0.16, 1, 0.3, 1); }
         .slide-up.show { opacity: 1; transform: translateY(0); }
         .slide-left { opacity: 0; transform: translateX(-80px); transition: all 1s cubic-bezier(0.16, 1, 0.3, 1); }
@@ -70,9 +147,11 @@ function Landing() {
         .slide-right.show { opacity: 1; transform: translateX(0); }
         .fade-in { opacity: 0; transition: opacity 1s ease; }
         .fade-in.show { opacity: 1; }
+
         .silk { position: fixed; inset: 0; background: radial-gradient(ellipse 80% 50% at 20% 40%, rgba(232,160,32,0.04), transparent), radial-gradient(ellipse 60% 80% at 80% 60%, rgba(255,255,255,0.01), transparent); pointer-events: none; z-index: 0; }
         .grid-overlay { position: fixed; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px); background-size: 80px 80px; pointer-events: none; z-index: 0; }
         .cursor-light { position: fixed; width: 400px; height: 400px; border-radius: 50%; background: radial-gradient(circle, rgba(232,160,32,0.04), transparent 70%); pointer-events: none; z-index: 1; transition: transform 0.15s ease; }
+
         .nav-item { font-family: 'Montserrat', sans-serif; font-size: 11px; color: #444; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; cursor: pointer; transition: color 0.2s; }
         .nav-item:hover { color: #f0ece4; }
         .btn-primary { background: #e8a020; color: #070707; border: none; padding: 16px 40px; font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer; transition: all 0.3s ease; border-radius: 2px; }
@@ -103,14 +182,28 @@ function Landing() {
         .user-banner { background: rgba(232,160,32,0.06); border-bottom: 1px solid rgba(232,160,32,0.1); padding: 10px 60px; display: flex; align-items: center; justify-content: space-between; position: fixed; top: 73px; left: 0; right: 0; z-index: 99; backdrop-filter: blur(20px); }
       `}</style>
 
-      {/* Loader */}
+      {/* ── LOADER ── */}
       <div className={`loader ${loaded ? 'hide' : ''}`}>
-        <div className="loader-word">
-          <span style={{ animationDelay: '0s' }}>SPY</span>
-          <span style={{ color: '#e8a020', animationDelay: '0.15s' }}>LENS</span>
+        <div className="loader-bg-glow" />
+        <div className="loader-grid" />
+        <div className="loader-corner tl" />
+        <div className="loader-corner tr" />
+        <div className="loader-corner bl" />
+        <div className="loader-corner br" />
+
+        <div className="loader-content">
+          <div className="loader-word">
+            <span style={{ color: '#f0ece4', animationDelay: '0s' }}>SPY</span>
+            <span style={{ color: '#e8a020', animationDelay: '0.2s' }}>LENS</span>
+          </div>
+          <div className="loader-line" />
+          <div className="loader-sub">AI Competitor Intelligence Platform</div>
+          <div className="loader-dots">
+            <div className="loader-dot" />
+            <div className="loader-dot" />
+            <div className="loader-dot" />
+          </div>
         </div>
-        <div className="loader-line" />
-        <div className="loader-sub">AI Competitor Intelligence</div>
       </div>
 
       <div className="silk" />
@@ -135,32 +228,24 @@ function Landing() {
                   </span>
                 )}
               </div>
-              <button className="btn-outline" style={{ padding: '8px 20px' }} onClick={() => navigate('/dashboard')}>
-                History
-              </button>
-              <button className="btn-primary" style={{ padding: '8px 20px' }} onClick={() => navigate('/dashboard')}>
-                Analyse Now →
-              </button>
+              <button className="btn-outline" style={{ padding: '8px 20px' }} onClick={() => navigate('/dashboard')}>History</button>
+              <button className="btn-primary" style={{ padding: '8px 20px' }} onClick={() => navigate('/dashboard')}>Analyse Now →</button>
               <button onClick={handleLogout} style={{ background: 'none', border: 'none', color: '#444', fontFamily: 'Montserrat, sans-serif', fontSize: '11px', fontWeight: '600', letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer' }}
                 onMouseOver={e => e.target.style.color = '#ef4444'}
-                onMouseOut={e => e.target.style.color = '#444'}>
-                Logout
-              </button>
+                onMouseOut={e => e.target.style.color = '#444'}>Logout</button>
             </>
           ) : (
             <>
               <span className="nav-item" onClick={() => navigate('/pricing')}>Pricing</span>
               <span className="nav-item" onClick={() => navigate('/about')}>About</span>
               <span className="nav-item" onClick={() => navigate('/login')}>Login</span>
-              <button className="btn-primary" style={{ padding: '10px 24px' }} onClick={() => navigate('/login')}>
-                Start Free
-              </button>
+              <button className="btn-primary" style={{ padding: '10px 24px' }} onClick={() => navigate('/login')}>Start Free</button>
             </>
           )}
         </div>
       </nav>
 
-      {/* Logged in user banner */}
+      {/* User Banner */}
       {user && showContent && (
         <div className="user-banner">
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -170,15 +255,12 @@ function Landing() {
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-            {plan === 'free' && (
+            {plan === 'free' ? (
               <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '11px', color: '#555' }}>
                 <span style={{ color: '#e8a020', fontWeight: '700' }}>{analysesLeft}</span> free analyses remaining
-                <button onClick={() => navigate('/pricing')} style={{ background: 'none', border: 'none', color: '#e8a020', fontFamily: 'Montserrat, sans-serif', fontSize: '11px', fontWeight: '700', cursor: 'pointer', marginLeft: '12px', textDecoration: 'underline' }}>
-                  Upgrade →
-                </button>
+                <button onClick={() => navigate('/pricing')} style={{ background: 'none', border: 'none', color: '#e8a020', fontFamily: 'Montserrat, sans-serif', fontSize: '11px', fontWeight: '700', cursor: 'pointer', marginLeft: '12px', textDecoration: 'underline' }}>Upgrade →</button>
               </span>
-            )}
-            {plan !== 'free' && (
+            ) : (
               <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '11px', color: '#555' }}>
                 <span style={{ color: '#10b981', fontWeight: '700' }}>Unlimited</span> analyses available
               </span>
@@ -197,20 +279,14 @@ function Landing() {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '80px', alignItems: 'end', marginBottom: '80px' }}>
             <h1 className={`hero-title slide-up ${showContent ? 'show' : ''}`} style={{ transitionDelay: '0.2s' }}>
-              {user ? (
-                <>Ready to<br />outsmart your<br /><span className="hero-accent">rivals</span>?</>
-              ) : (
-                <>Know<br />what your<br /><span className="hero-accent">rivals</span><br />are doing.</>
-              )}
+              {user ? (<>Ready to<br />outsmart your<br /><span className="hero-accent">rivals</span>?</>) : (<>Know<br />what your<br /><span className="hero-accent">rivals</span><br />are doing.</>)}
             </h1>
 
             <div className={`slide-right ${showContent ? 'show' : ''}`} style={{ transitionDelay: '0.35s', paddingBottom: '8px' }}>
               {user ? (
                 <>
                   <div style={{ background: '#0c0c0c', border: '1px solid #161616', borderRadius: '4px', padding: '32px', marginBottom: '32px' }}>
-                    <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#e8a020', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: '700', marginBottom: '20px' }}>
-                      Your Account
-                    </div>
+                    <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#e8a020', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: '700', marginBottom: '20px' }}>Your Account</div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
                       <div style={{ background: '#111', borderRadius: '2px', padding: '16px' }}>
                         <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#444', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '8px' }}>Current Plan</div>
@@ -218,13 +294,11 @@ function Landing() {
                       </div>
                       <div style={{ background: '#111', borderRadius: '2px', padding: '16px' }}>
                         <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#444', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '8px' }}>Analyses Left</div>
-                        <div style={{ fontFamily: 'Playfair Display, serif', fontSize: '24px', fontWeight: '700', color: plan === 'free' ? '#f0ece4' : '#10b981' }}>
-                          {plan === 'free' ? analysesLeft : '∞'}
-                        </div>
+                        <div style={{ fontFamily: 'Playfair Display, serif', fontSize: '24px', fontWeight: '700', color: plan === 'free' ? '#f0ece4' : '#10b981' }}>{plan === 'free' ? analysesLeft : '∞'}</div>
                       </div>
                     </div>
                     {plan === 'free' && (
-                      <button onClick={() => navigate('/pricing')} style={{ width: '100%', padding: '12px', background: 'none', border: '1px solid rgba(232,160,32,0.3)', borderRadius: '2px', color: '#e8a020', fontFamily: 'Montserrat, sans-serif', fontSize: '11px', fontWeight: '700', letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer', transition: 'all 0.2s' }}>
+                      <button onClick={() => navigate('/pricing')} style={{ width: '100%', padding: '12px', background: 'none', border: '1px solid rgba(232,160,32,0.3)', borderRadius: '2px', color: '#e8a020', fontFamily: 'Montserrat, sans-serif', fontSize: '11px', fontWeight: '700', letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer' }}>
                         Upgrade to Pro — ₹399/month →
                       </button>
                     )}
@@ -251,7 +325,6 @@ function Landing() {
             </div>
           </div>
 
-          {/* Stats */}
           <div className={`slide-up ${showContent ? 'show' : ''}`} style={{ transitionDelay: '0.5s', borderTop: '1px solid #111', paddingTop: '60px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '48px' }}>
             {[
               { val: '$20K', sub: 'Saved vs enterprise' },
@@ -357,25 +430,15 @@ function Landing() {
       <section id="cta" style={{ position: 'relative', zIndex: 1, maxWidth: '1400px', margin: '0 auto', padding: '160px 60px 120px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '60px' }}>
           <h2 className="section-title" style={{ fontSize: 'clamp(52px, 9vw, 120px)', flex: 1, minWidth: '300px' }}>
-            {user ? (
-              <>Keep<br /><span className="hero-accent" style={{ fontSize: 'inherit' }}>winning</span><br />today.</>
-            ) : (
-              <>Start<br /><span className="hero-accent" style={{ fontSize: 'inherit' }}>knowing</span><br />today.</>
-            )}
+            {user ? (<>Keep<br /><span className="hero-accent" style={{ fontSize: 'inherit' }}>winning</span><br />today.</>) : (<>Start<br /><span className="hero-accent" style={{ fontSize: 'inherit' }}>knowing</span><br />today.</>)}
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'flex-end' }}>
             {user ? (
-              <button className="btn-primary" style={{ fontSize: '12px', padding: '20px 56px' }} onClick={() => navigate('/dashboard')}>
-                Analyse Competitors Now →
-              </button>
+              <button className="btn-primary" style={{ fontSize: '12px', padding: '20px 56px' }} onClick={() => navigate('/dashboard')}>Analyse Competitors Now →</button>
             ) : (
               <>
-                <button className="btn-primary" style={{ fontSize: '12px', padding: '20px 56px' }} onClick={() => navigate('/login')}>
-                  Analyze Competitors Free →
-                </button>
-                <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#222', letterSpacing: '0.15em', fontWeight: '600', textTransform: 'uppercase' }}>
-                  No credit card required
-                </span>
+                <button className="btn-primary" style={{ fontSize: '12px', padding: '20px 56px' }} onClick={() => navigate('/login')}>Analyze Competitors Free →</button>
+                <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#222', letterSpacing: '0.15em', fontWeight: '600', textTransform: 'uppercase' }}>No credit card required</span>
               </>
             )}
           </div>
@@ -384,17 +447,13 @@ function Landing() {
 
       {/* Footer */}
       <footer style={{ position: 'relative', zIndex: 1, borderTop: '1px solid #0f0f0f', padding: '40px 60px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ fontFamily: 'Playfair Display, serif', fontSize: '18px', fontWeight: '800' }}>
-          SPY<span style={{ color: '#e8a020' }}>LENS</span>
-        </div>
+        <div style={{ fontFamily: 'Playfair Display, serif', fontSize: '18px', fontWeight: '800' }}>SPY<span style={{ color: '#e8a020' }}>LENS</span></div>
         <div style={{ display: 'flex', gap: '48px' }}>
           <span className="nav-item" onClick={() => navigate('/pricing')}>Pricing</span>
           <span className="nav-item" onClick={() => navigate('/about')}>About</span>
           {!user && <span className="nav-item" onClick={() => navigate('/login')}>Login</span>}
         </div>
-        <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#222', letterSpacing: '0.12em', fontWeight: '600', textTransform: 'uppercase' }}>
-          © 2026 SpyLens
-        </div>
+        <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#222', letterSpacing: '0.12em', fontWeight: '600', textTransform: 'uppercase' }}>© 2026 SpyLens</div>
       </footer>
 
     </div>
