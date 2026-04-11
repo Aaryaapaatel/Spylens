@@ -79,9 +79,12 @@ function Landing() {
         @keyframes orbitY { from { transform: rotateY(0deg) rotateX(20deg); } to { transform: rotateY(360deg) rotateX(20deg); } }
         @keyframes orbitZ { from { transform: rotateZ(0deg) rotateX(40deg); } to { transform: rotateZ(-360deg) rotateX(40deg); } }
         @keyframes floatOrb { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-12px); } }
-        @keyframes blinkDot { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 1; transform: scale(1.05); } }
+        @keyframes blinkDot { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
         @keyframes radarSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @keyframes pulseRing { 0% { transform: scale(0.8); opacity: 0.6; } 100% { transform: scale(2); opacity: 0; } }
+        @keyframes barGrow { from { width: 0; } to { width: var(--w); } }
+        @keyframes countUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes scanMove { 0% { top: 0%; } 100% { top: 100%; } }
 
         .slide-up { opacity: 0; transform: translateY(80px); transition: all 1s cubic-bezier(0.16, 1, 0.3, 1); }
         .slide-up.show { opacity: 1; transform: translateY(0); }
@@ -125,16 +128,16 @@ function Landing() {
         .plan-badge:hover { background: rgba(232,160,32,0.2); border-color: rgba(232,160,32,0.4); }
         .user-banner { background: rgba(232,160,32,0.06); border-bottom: 1px solid rgba(232,160,32,0.1); padding: 10px 60px; display: flex; align-items: center; justify-content: space-between; position: fixed; top: 73px; left: 0; right: 0; z-index: 99; backdrop-filter: blur(20px); }
         .data-tag { position: absolute; background: rgba(232,160,32,0.08); border: 1px solid rgba(232,160,32,0.2); border-radius: 2px; padding: 4px 10px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #e8a020; white-space: nowrap; animation: blinkDot 2s ease infinite; }
+        .intel-bar { height: 4px; background: rgba(232,160,32,0.15); border-radius: 2px; overflow: hidden; margin-top: 6px; }
+        .intel-bar-fill { height: 100%; background: linear-gradient(90deg, #e8a020, #f0b030); border-radius: 2px; animation: barGrow 1.5s ease forwards; }
       `}</style>
 
       {/* Loader */}
       <div className={`loader ${loaded ? 'hide' : ''}`}>
         <div className="loader-bg-glow" />
         <div className="loader-grid" />
-        <div className="loader-corner tl" />
-        <div className="loader-corner tr" />
-        <div className="loader-corner bl" />
-        <div className="loader-corner br" />
+        <div className="loader-corner tl" /><div className="loader-corner tr" />
+        <div className="loader-corner bl" /><div className="loader-corner br" />
         <div className="loader-content">
           <div className="loader-word">
             <span style={{ color: '#f0ece4', animationDelay: '0s' }}>SPY</span>
@@ -143,9 +146,7 @@ function Landing() {
           <div className="loader-line" />
           <div className="loader-sub">AI Competitor Intelligence Platform</div>
           <div className="loader-dots">
-            <div className="loader-dot" />
-            <div className="loader-dot" />
-            <div className="loader-dot" />
+            <div className="loader-dot" /><div className="loader-dot" /><div className="loader-dot" />
           </div>
         </div>
       </div>
@@ -156,9 +157,7 @@ function Landing() {
 
       {/* Navbar */}
       <nav className={`fade-in ${showContent ? 'show' : ''}`} style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, padding: '20px 60px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(7,7,7,0.92)', backdropFilter: 'blur(20px)', borderBottom: '1px solid #0f0f0f' }}>
-        <div style={{ fontFamily: 'Playfair Display, serif', fontSize: '20px', fontWeight: '800', letterSpacing: '-0.01em' }}>
-          SPY<span style={{ color: '#e8a020' }}>LENS</span>
-        </div>
+        <div style={{ fontFamily: 'Playfair Display, serif', fontSize: '20px', fontWeight: '800' }}>SPY<span style={{ color: '#e8a020' }}>LENS</span></div>
         <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
           {user ? (
             <>
@@ -187,11 +186,11 @@ function Landing() {
         <div className="user-banner">
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }} />
-            <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '12px', color: '#555', letterSpacing: '0.08em' }}>
+            <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '12px', color: '#555' }}>
               Welcome back, <span style={{ color: '#f0ece4', fontWeight: '600' }}>{userName}</span>
             </span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+          <div>
             {plan === 'free' ? (
               <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '11px', color: '#555' }}>
                 <span style={{ color: '#e8a020', fontWeight: '700' }}>{analysesLeft}</span> free analyses remaining
@@ -218,7 +217,6 @@ function Landing() {
             <h1 className={`hero-title slide-up ${showContent ? 'show' : ''}`} style={{ transitionDelay: '0.2s' }}>
               {user ? (<>Ready to<br />outsmart your<br /><span className="hero-accent">rivals</span>?</>) : (<>Know<br />what your<br /><span className="hero-accent">rivals</span><br />are doing.</>)}
             </h1>
-
             <div className={`slide-right ${showContent ? 'show' : ''}`} style={{ transitionDelay: '0.35s', paddingBottom: '8px' }}>
               {user ? (
                 <>
@@ -290,7 +288,7 @@ function Landing() {
       <section id="features" style={{ position: 'relative', zIndex: 1, maxWidth: '1400px', margin: '0 auto', padding: '160px 60px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '120px', alignItems: 'start' }}>
 
-          {/* Left sticky — 3D orb */}
+          {/* Left sticky */}
           <div style={{ position: 'sticky', top: '120px' }}>
             <div className="section-eyebrow">What We Do</div>
             <h2 className="section-title" style={{ fontSize: 'clamp(36px, 4vw, 56px)', marginBottom: '32px' }}>
@@ -299,52 +297,63 @@ function Landing() {
             <p className="body-text" style={{ marginBottom: '52px' }}>Built for small businesses who need enterprise-grade intelligence at a price they can actually afford.</p>
 
             {/* 3D Intelligence Orb */}
-            <div style={{ position: 'relative', width: '280px', height: '280px' }}>
-              {/* Pulse rings */}
+            <div style={{ position: 'relative', width: '280px', height: '280px', marginBottom: '40px' }}>
               <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {[1, 2, 3].map(i => (
                   <div key={i} style={{ position: 'absolute', width: `${i * 80}px`, height: `${i * 80}px`, borderRadius: '50%', border: '1px solid rgba(232,160,32,0.12)', animation: `pulseRing ${2 + i * 0.6}s ease-out infinite`, animationDelay: `${i * 0.5}s` }} />
                 ))}
               </div>
-
-              {/* Floating orb */}
               <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'floatOrb 4s ease infinite' }}>
                 <div style={{ position: 'relative', width: '160px', height: '160px' }}>
-
-                  {/* Core */}
                   <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'radial-gradient(circle at 35% 35%, rgba(232,160,32,0.2), rgba(232,160,32,0.04) 60%, transparent)', border: '1px solid rgba(232,160,32,0.25)', boxShadow: '0 0 50px rgba(232,160,32,0.1), inset 0 0 30px rgba(232,160,32,0.04)' }} />
-
-                  {/* Ring 1 */}
                   <div style={{ position: 'absolute', inset: '-20px', borderRadius: '50%', border: '1px solid rgba(232,160,32,0.18)', animation: 'orbitX 6s linear infinite', transform: 'rotateX(70deg)' }}>
                     <div style={{ position: 'absolute', top: '-4px', left: '50%', width: '7px', height: '7px', borderRadius: '50%', background: '#e8a020', transform: 'translateX(-50%)', boxShadow: '0 0 10px #e8a020' }} />
                   </div>
-
-                  {/* Ring 2 */}
                   <div style={{ position: 'absolute', inset: '-30px', borderRadius: '50%', border: '1px solid rgba(232,160,32,0.12)', animation: 'orbitY 9s linear infinite', transform: 'rotateY(70deg)' }}>
                     <div style={{ position: 'absolute', top: '-4px', left: '50%', width: '8px', height: '8px', borderRadius: '50%', background: '#f0b030', transform: 'translateX(-50%)', boxShadow: '0 0 12px #f0b030' }} />
                   </div>
-
-                  {/* Ring 3 */}
                   <div style={{ position: 'absolute', inset: '-10px', borderRadius: '50%', border: '1px solid rgba(232,160,32,0.08)', animation: 'orbitZ 12s linear infinite' }}>
                     <div style={{ position: 'absolute', bottom: '-3px', right: '20%', width: '5px', height: '5px', borderRadius: '50%', background: '#e8a020', boxShadow: '0 0 6px #e8a020' }} />
                   </div>
-
-                  {/* Radar */}
                   <div style={{ position: 'absolute', inset: '20px', borderRadius: '50%', overflow: 'hidden', opacity: 0.35 }}>
                     <div style={{ position: 'absolute', inset: 0, background: 'conic-gradient(from 0deg, transparent 0deg, rgba(232,160,32,0.4) 30deg, transparent 60deg)', animation: 'radarSpin 3s linear infinite', borderRadius: '50%' }} />
                   </div>
-
-                  {/* Center S */}
                   <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <div style={{ fontFamily: 'Playfair Display, serif', fontSize: '36px', fontWeight: '800', color: '#e8a020', textShadow: '0 0 24px rgba(232,160,32,0.6)' }}>S</div>
                   </div>
                 </div>
               </div>
-
-              {/* Floating tags */}
               <div className="data-tag" style={{ top: '8%', left: '68%', animationDelay: '0s' }}>Pricing ↓</div>
               <div className="data-tag" style={{ top: '78%', left: '62%', animationDelay: '0.6s' }}>Threat: High</div>
               <div className="data-tag" style={{ top: '88%', left: '2%', animationDelay: '1.2s' }}>New Feature</div>
+            </div>
+
+            {/* Intelligence Score Card */}
+            <div style={{ background: '#0c0c0c', border: '1px solid #161616', borderRadius: '4px', padding: '24px', width: '280px' }}>
+              <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#e8a020', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: '700', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', animation: 'blinkDot 1.5s ease infinite' }} />
+                Live Intel Score
+              </div>
+              {[
+                { label: 'Pricing Data', val: '94%', w: '94%' },
+                { label: 'Feature Tracking', val: '87%', w: '87%' },
+                { label: 'Threat Analysis', val: '91%', w: '91%' },
+                { label: 'Market Position', val: '78%', w: '78%' },
+              ].map((item, i) => (
+                <div key={i} style={{ marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '11px', color: '#555', fontWeight: '400' }}>{item.label}</span>
+                    <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '11px', color: '#e8a020', fontWeight: '500' }}>{item.val}</span>
+                  </div>
+                  <div className="intel-bar">
+                    <div className="intel-bar-fill" style={{ '--w': item.w, width: item.w, animationDelay: `${i * 0.2}s` }} />
+                  </div>
+                </div>
+              ))}
+              <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #1a1a1a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#333', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Overall Score</span>
+                <span style={{ fontFamily: 'Playfair Display, serif', fontSize: '22px', fontWeight: '700', color: '#e8a020' }}>88<span style={{ fontSize: '12px', color: '#555' }}>/100</span></span>
+              </div>
             </div>
           </div>
 
