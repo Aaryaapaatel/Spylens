@@ -21,26 +21,15 @@ function Landing() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setUser(session.user);
-        setUserName(
-          session.user.user_metadata?.full_name ||
-          session.user.email.split('@')[0]
-        );
-        supabase
-          .from('profiles')
-          .select('plan, full_name')
-          .eq('id', session.user.id)
-          .single()
-          .then(({ data }) => {
-            if (data) {
-              setPlan(data.plan || 'free');
-              if (data.full_name) setUserName(data.full_name);
-              if (data.plan === 'pro' || data.plan === 'business' || data.plan === 'agency') {
-                setAnalysesLeft(999);
-              } else {
-                setAnalysesLeft(2);
-              }
-            }
-          });
+        setUserName(session.user.user_metadata?.full_name || session.user.email.split('@')[0]);
+        supabase.from('profiles').select('plan, full_name').eq('id', session.user.id).single().then(({ data }) => {
+          if (data) {
+            setPlan(data.plan || 'free');
+            if (data.full_name) setUserName(data.full_name);
+            if (data.plan === 'pro' || data.plan === 'business' || data.plan === 'agency') setAnalysesLeft(999);
+            else setAnalysesLeft(2);
+          }
+        });
       }
     });
 
@@ -86,6 +75,13 @@ function Landing() {
         @keyframes dotPulse { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 1; transform: scale(1.4); } }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(70px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        @keyframes orbitX { from { transform: rotateX(0deg) rotateY(0deg); } to { transform: rotateX(360deg) rotateY(360deg); } }
+        @keyframes orbitY { from { transform: rotateY(0deg) rotateX(20deg); } to { transform: rotateY(360deg) rotateX(20deg); } }
+        @keyframes orbitZ { from { transform: rotateZ(0deg) rotateX(40deg); } to { transform: rotateZ(-360deg) rotateX(40deg); } }
+        @keyframes floatOrb { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-12px); } }
+        @keyframes blinkDot { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 1; transform: scale(1.05); } }
+        @keyframes radarSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes pulseRing { 0% { transform: scale(0.8); opacity: 0.6; } 100% { transform: scale(2); opacity: 0; } }
 
         .slide-up { opacity: 0; transform: translateY(80px); transition: all 1s cubic-bezier(0.16, 1, 0.3, 1); }
         .slide-up.show { opacity: 1; transform: translateY(0); }
@@ -128,6 +124,7 @@ function Landing() {
         .plan-badge { background: rgba(232,160,32,0.1); border: 1px solid rgba(232,160,32,0.2); border-radius: 2px; padding: 6px 16px; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s ease; }
         .plan-badge:hover { background: rgba(232,160,32,0.2); border-color: rgba(232,160,32,0.4); }
         .user-banner { background: rgba(232,160,32,0.06); border-bottom: 1px solid rgba(232,160,32,0.1); padding: 10px 60px; display: flex; align-items: center; justify-content: space-between; position: fixed; top: 73px; left: 0; right: 0; z-index: 99; backdrop-filter: blur(20px); }
+        .data-tag { position: absolute; background: rgba(232,160,32,0.08); border: 1px solid rgba(232,160,32,0.2); border-radius: 2px; padding: 4px 10px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #e8a020; white-space: nowrap; animation: blinkDot 2s ease infinite; }
       `}</style>
 
       {/* Loader */}
@@ -166,20 +163,13 @@ function Landing() {
           {user ? (
             <>
               <div className="plan-badge" onClick={() => navigate('/pricing')}>
-                <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#e8a020', letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: '700' }}>
-                  {plan.toUpperCase()} PLAN
-                </span>
-                {plan === 'free' && (
-                  <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#666', letterSpacing: '0.08em' }}>
-                    · {analysesLeft} left
-                  </span>
-                )}
+                <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#e8a020', letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: '700' }}>{plan.toUpperCase()} PLAN</span>
+                {plan === 'free' && <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#666' }}>· {analysesLeft} left</span>}
               </div>
               <button className="btn-outline" style={{ padding: '8px 20px' }} onClick={() => navigate('/dashboard')}>History</button>
               <button className="btn-primary" style={{ padding: '8px 20px' }} onClick={() => navigate('/dashboard')}>Analyse Now →</button>
               <button onClick={handleLogout} style={{ background: 'none', border: 'none', color: '#444', fontFamily: 'Montserrat, sans-serif', fontSize: '11px', fontWeight: '600', letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer' }}
-                onMouseOver={e => e.target.style.color = '#ef4444'}
-                onMouseOut={e => e.target.style.color = '#444'}>Logout</button>
+                onMouseOver={e => e.target.style.color = '#ef4444'} onMouseOut={e => e.target.style.color = '#444'}>Logout</button>
             </>
           ) : (
             <>
@@ -279,10 +269,7 @@ function Landing() {
               { val: '10x', sub: 'Faster research' },
               { val: '₹399', sub: 'Pro plan per month' },
             ].map((s, i) => (
-              <div key={i}>
-                <div className="stat-val">{s.val}</div>
-                <div className="stat-label">{s.sub}</div>
-              </div>
+              <div key={i}><div className="stat-val">{s.val}</div><div className="stat-label">{s.sub}</div></div>
             ))}
           </div>
         </div>
@@ -293,11 +280,7 @@ function Landing() {
         <div className="marquee-track">
           {[...Array(8)].map((_, i) => (
             <span key={i} className="marquee-item">
-              <span className="marquee-dot" />Competitor Pricing
-              <span className="marquee-dot" />AI Web Search
-              <span className="marquee-dot" />Weekly Digest
-              <span className="marquee-dot" />Threat Scoring
-              <span className="marquee-dot" />Real Time Intel
+              <span className="marquee-dot" />Competitor Pricing<span className="marquee-dot" />AI Web Search<span className="marquee-dot" />Weekly Digest<span className="marquee-dot" />Threat Scoring<span className="marquee-dot" />Real Time Intel
             </span>
           ))}
         </div>
@@ -306,13 +289,66 @@ function Landing() {
       {/* Features */}
       <section id="features" style={{ position: 'relative', zIndex: 1, maxWidth: '1400px', margin: '0 auto', padding: '160px 60px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '120px', alignItems: 'start' }}>
+
+          {/* Left sticky — 3D orb */}
           <div style={{ position: 'sticky', top: '120px' }}>
             <div className="section-eyebrow">What We Do</div>
             <h2 className="section-title" style={{ fontSize: 'clamp(36px, 4vw, 56px)', marginBottom: '32px' }}>
               Everything<br />you need<br />to <span className="hero-accent" style={{ fontSize: 'inherit' }}>win</span>.
             </h2>
-            <p className="body-text">Built for small businesses who need enterprise-grade intelligence at a price they can actually afford.</p>
+            <p className="body-text" style={{ marginBottom: '52px' }}>Built for small businesses who need enterprise-grade intelligence at a price they can actually afford.</p>
+
+            {/* 3D Intelligence Orb */}
+            <div style={{ position: 'relative', width: '280px', height: '280px' }}>
+              {/* Pulse rings */}
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {[1, 2, 3].map(i => (
+                  <div key={i} style={{ position: 'absolute', width: `${i * 80}px`, height: `${i * 80}px`, borderRadius: '50%', border: '1px solid rgba(232,160,32,0.12)', animation: `pulseRing ${2 + i * 0.6}s ease-out infinite`, animationDelay: `${i * 0.5}s` }} />
+                ))}
+              </div>
+
+              {/* Floating orb */}
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'floatOrb 4s ease infinite' }}>
+                <div style={{ position: 'relative', width: '160px', height: '160px' }}>
+
+                  {/* Core */}
+                  <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'radial-gradient(circle at 35% 35%, rgba(232,160,32,0.2), rgba(232,160,32,0.04) 60%, transparent)', border: '1px solid rgba(232,160,32,0.25)', boxShadow: '0 0 50px rgba(232,160,32,0.1), inset 0 0 30px rgba(232,160,32,0.04)' }} />
+
+                  {/* Ring 1 */}
+                  <div style={{ position: 'absolute', inset: '-20px', borderRadius: '50%', border: '1px solid rgba(232,160,32,0.18)', animation: 'orbitX 6s linear infinite', transform: 'rotateX(70deg)' }}>
+                    <div style={{ position: 'absolute', top: '-4px', left: '50%', width: '7px', height: '7px', borderRadius: '50%', background: '#e8a020', transform: 'translateX(-50%)', boxShadow: '0 0 10px #e8a020' }} />
+                  </div>
+
+                  {/* Ring 2 */}
+                  <div style={{ position: 'absolute', inset: '-30px', borderRadius: '50%', border: '1px solid rgba(232,160,32,0.12)', animation: 'orbitY 9s linear infinite', transform: 'rotateY(70deg)' }}>
+                    <div style={{ position: 'absolute', top: '-4px', left: '50%', width: '8px', height: '8px', borderRadius: '50%', background: '#f0b030', transform: 'translateX(-50%)', boxShadow: '0 0 12px #f0b030' }} />
+                  </div>
+
+                  {/* Ring 3 */}
+                  <div style={{ position: 'absolute', inset: '-10px', borderRadius: '50%', border: '1px solid rgba(232,160,32,0.08)', animation: 'orbitZ 12s linear infinite' }}>
+                    <div style={{ position: 'absolute', bottom: '-3px', right: '20%', width: '5px', height: '5px', borderRadius: '50%', background: '#e8a020', boxShadow: '0 0 6px #e8a020' }} />
+                  </div>
+
+                  {/* Radar */}
+                  <div style={{ position: 'absolute', inset: '20px', borderRadius: '50%', overflow: 'hidden', opacity: 0.35 }}>
+                    <div style={{ position: 'absolute', inset: 0, background: 'conic-gradient(from 0deg, transparent 0deg, rgba(232,160,32,0.4) 30deg, transparent 60deg)', animation: 'radarSpin 3s linear infinite', borderRadius: '50%' }} />
+                  </div>
+
+                  {/* Center S */}
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ fontFamily: 'Playfair Display, serif', fontSize: '36px', fontWeight: '800', color: '#e8a020', textShadow: '0 0 24px rgba(232,160,32,0.6)' }}>S</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Floating tags */}
+              <div className="data-tag" style={{ top: '8%', left: '68%', animationDelay: '0s' }}>Pricing ↓</div>
+              <div className="data-tag" style={{ top: '78%', left: '62%', animationDelay: '0.6s' }}>Threat: High</div>
+              <div className="data-tag" style={{ top: '88%', left: '2%', animationDelay: '1.2s' }}>New Feature</div>
+            </div>
           </div>
+
+          {/* Features list */}
           <div>
             {[
               { num: '01', title: 'Real-time Analysis', desc: 'AI browses competitor websites live. No cached data. No guessing. Fresh intelligence returned in under 60 seconds every single time.' },
@@ -342,14 +378,12 @@ function Landing() {
             <h2 className="section-title" style={{ fontSize: 'clamp(36px, 5vw, 64px)' }}>
               The honest<br /><span className="hero-accent" style={{ fontSize: 'inherit' }}>comparison</span>.
             </h2>
-            <p className="body-text" style={{ maxWidth: '300px', textAlign: 'right' }}>We're not afraid to show you how we stack up. The numbers speak for themselves.</p>
+            <p className="body-text" style={{ maxWidth: '300px', textAlign: 'right' }}>We're not afraid to show you how we stack up.</p>
           </div>
           <div style={{ border: '1px solid #111', borderRadius: '4px', overflow: 'hidden' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', background: '#0a0a0a', borderBottom: '1px solid #111' }}>
               {['', 'SpyLens', 'Crayon', 'Manual'].map((h, i) => (
-                <div key={i} style={{ padding: '24px 32px' }}>
-                  <span className="table-header" style={{ color: i === 1 ? '#e8a020' : '#333' }}>{h}</span>
-                </div>
+                <div key={i} style={{ padding: '24px 32px' }}><span className="table-header" style={{ color: i === 1 ? '#e8a020' : '#333' }}>{h}</span></div>
               ))}
             </div>
             {[
