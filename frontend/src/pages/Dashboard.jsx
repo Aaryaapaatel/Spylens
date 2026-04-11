@@ -10,42 +10,29 @@ function Dashboard() {
   const [results, setResults] = useState(null);
   const [error, setError] = useState('');
   const [step, setStep] = useState(0);
+  const [activeTab, setActiveTab] = useState({});
 
   const steps = [
-    'Initializing AI analyst...',
-    'Browsing competitor websites...',
-    'Analyzing pricing models...',
+    'Initializing AI strategist...',
+    'Searching competitor websites...',
+    'Analyzing SEO & paid ads...',
+    'Mapping content strategies...',
     'Identifying weaknesses...',
+    'Building action plans...',
     'Generating intelligence report...',
   ];
 
-  const addCompetitor = () => {
-    if (competitors.length < 5) setCompetitors([...competitors, '']);
-  };
+  const addCompetitor = () => { if (competitors.length < 5) setCompetitors([...competitors, '']); };
+  const removeCompetitor = (i) => setCompetitors(competitors.filter((_, idx) => idx !== i));
+  const updateCompetitor = (i, v) => { const u = [...competitors]; u[i] = v; setCompetitors(u); };
 
-  const removeCompetitor = (index) => {
-    setCompetitors(competitors.filter((_, i) => i !== index));
-  };
-
-  const updateCompetitor = (index, value) => {
-    const updated = [...competitors];
-    updated[index] = value;
-    setCompetitors(updated);
-  };
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate('/');
-  };
+  const handleLogout = async () => { await supabase.auth.signOut(); navigate('/'); };
 
   const analyze = async () => {
-    const validUrls = competitors.filter(url => url.trim() !== '');
+    const validUrls = competitors.filter(u => u.trim() !== '');
     if (!companyName.trim()) { setError('Please enter your company name'); return; }
     if (validUrls.length === 0) { setError('Please enter at least one competitor URL'); return; }
-
-    setError('');
-    setLoading(true);
-    setResults(null);
+    setError(''); setLoading(true); setResults(null);
 
     for (let i = 0; i < steps.length; i++) {
       setStep(i);
@@ -61,6 +48,9 @@ function Dashboard() {
       const data = await response.json();
       if (data.success) {
         setResults(data.data);
+        const tabs = {};
+        data.data.forEach((_, i) => tabs[i] = 'overview');
+        setActiveTab(tabs);
       } else {
         setError('Analysis failed. Please try again.');
       }
@@ -75,6 +65,9 @@ function Dashboard() {
     if (level === 'Medium') return '#f59e0b';
     return '#10b981';
   };
+
+  const tabs = ['overview', 'seo', 'ads', 'content', 'action'];
+  const tabLabels = { overview: 'Overview', seo: 'SEO', ads: 'Paid Ads', content: 'Content', action: 'Action Plan' };
 
   return (
     <div style={{ minHeight: '100vh', background: '#050810', color: '#e2e8f0', fontFamily: 'system-ui' }}>
@@ -93,7 +86,7 @@ function Dashboard() {
         .analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; animation: none; }
         .glass-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 4px; backdrop-filter: blur(20px); }
         .comp-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; animation: fadeUp 0.5s ease both; transition: all 0.3s ease; }
-        .comp-card:hover { border-color: rgba(232,160,32,0.2); transform: translateY(-4px); box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
+        .comp-card:hover { border-color: rgba(232,160,32,0.2); box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
         .tag { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 2px; padding: 4px 10px; font-size: 12px; color: #8b949e; font-family: 'IBM Plex Mono', monospace; }
         .remove-btn { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); color: #ef4444; width: 36px; height: 36px; border-radius: 4px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; flex-shrink: 0; }
         .remove-btn:hover { background: rgba(239,68,68,0.2); }
@@ -101,6 +94,13 @@ function Dashboard() {
         .add-btn:hover { border-color: rgba(232,160,32,0.4); color: #e8a020; background: rgba(232,160,32,0.04); }
         .logout-btn { background: none; border: 1px solid #1e1e1e; color: #444; padding: 8px 20px; border-radius: 2px; font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; transition: all 0.2s ease; }
         .logout-btn:hover { border-color: #ef4444; color: #ef4444; }
+        .tab-btn { padding: 8px 16px; background: none; border: 1px solid transparent; border-radius: 2px; font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; transition: all 0.2s ease; color: #444; }
+        .tab-btn.active { border-color: rgba(232,160,32,0.3); color: #e8a020; background: rgba(232,160,32,0.06); }
+        .tab-btn:hover:not(.active) { color: #888; border-color: rgba(255,255,255,0.1); }
+        .info-row { display: flex; gap: '12px'; padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+        .action-step { display: flex; gap: 12px; align-items: flex-start; padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+        .action-step:last-child { border-bottom: none; }
+        .step-num { width: 28px; height: 28px; border-radius: 50%; background: rgba(232,160,32,0.1); border: 1px solid rgba(232,160,32,0.3); display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #e8a020; flex-shrink: 0; font-weight: 700; }
       `}</style>
 
       {/* Background */}
@@ -119,18 +119,16 @@ function Dashboard() {
         </div>
       </nav>
 
-      <div style={{ position: 'relative', zIndex: 1, maxWidth: '1100px', margin: '0 auto', padding: '48px 24px' }}>
+      <div style={{ position: 'relative', zIndex: 1, maxWidth: '1200px', margin: '0 auto', padding: '48px 24px' }}>
 
         {/* Header */}
         <div style={{ marginBottom: '48px' }}>
-          <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '11px', color: '#e8a020', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '12px' }}>
-            ◆ Intelligence Dashboard
-          </div>
+          <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '11px', color: '#e8a020', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '12px' }}>◆ Intelligence Dashboard</div>
           <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: '38px', fontWeight: '800', letterSpacing: '-0.02em', marginBottom: '8px' }}>
             Analyze Your <span style={{ fontStyle: 'italic', color: '#e8a020' }}>Competitors</span>
           </h1>
           <p style={{ color: '#8b949e', fontSize: '15px', fontFamily: 'Montserrat, sans-serif', fontWeight: '400' }}>
-            Enter competitor URLs and get AI-powered intelligence in 60 seconds
+            AI-powered competitor intelligence with SEO, ads, content & action plans
           </p>
         </div>
 
@@ -138,36 +136,26 @@ function Dashboard() {
 
           {/* Setup Panel */}
           <div className="glass-card" style={{ padding: '32px' }}>
-            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '11px', color: '#e8a020', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '24px' }}>
-              Setup Analysis
-            </div>
+            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '11px', color: '#e8a020', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '24px' }}>Setup Analysis</div>
 
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ fontSize: '11px', color: '#8b949e', display: 'block', marginBottom: '8px', fontFamily: 'Montserrat, sans-serif', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: '600' }}>
-                Your Company Name
-              </label>
+              <label style={{ fontSize: '11px', color: '#8b949e', display: 'block', marginBottom: '8px', fontFamily: 'Montserrat, sans-serif', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: '600' }}>Your Company Name</label>
               <input className="input-field" placeholder="e.g. MyStartup" value={companyName} onChange={e => setCompanyName(e.target.value)} />
             </div>
 
             <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '24px 0' }} />
 
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ fontSize: '11px', color: '#8b949e', display: 'block', marginBottom: '12px', fontFamily: 'Montserrat, sans-serif', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: '600' }}>
-                Competitor URLs ({competitors.length}/5)
-              </label>
+              <label style={{ fontSize: '11px', color: '#8b949e', display: 'block', marginBottom: '12px', fontFamily: 'Montserrat, sans-serif', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: '600' }}>Competitor URLs ({competitors.length}/5)</label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {competitors.map((url, i) => (
                   <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <input className="input-field" placeholder={`https://competitor${i + 1}.com`} value={url} onChange={e => updateCompetitor(i, e.target.value)} />
-                    {competitors.length > 1 && (
-                      <button className="remove-btn" onClick={() => removeCompetitor(i)}>×</button>
-                    )}
+                    {competitors.length > 1 && <button className="remove-btn" onClick={() => removeCompetitor(i)}>×</button>}
                   </div>
                 ))}
               </div>
-              {competitors.length < 5 && (
-                <button className="add-btn" onClick={addCompetitor}>+ Add Competitor</button>
-              )}
+              {competitors.length < 5 && <button className="add-btn" onClick={addCompetitor}>+ Add Competitor</button>}
             </div>
 
             {error && (
@@ -190,12 +178,8 @@ function Dashboard() {
             {loading && (
               <div className="glass-card" style={{ padding: '48px', textAlign: 'center' }}>
                 <div style={{ width: '60px', height: '60px', border: '3px solid rgba(232,160,32,0.2)', borderTopColor: '#e8a020', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 32px' }} />
-                <div style={{ fontFamily: 'Playfair Display, serif', fontSize: '22px', fontWeight: '700', marginBottom: '8px' }}>
-                  AI is researching...
-                </div>
-                <div style={{ color: '#8b949e', fontSize: '14px', marginBottom: '32px', fontFamily: 'Montserrat, sans-serif' }}>
-                  Browsing competitor websites in real time
-                </div>
+                <div style={{ fontFamily: 'Playfair Display, serif', fontSize: '22px', fontWeight: '700', marginBottom: '8px' }}>AI Strategist is working...</div>
+                <div style={{ color: '#8b949e', fontSize: '14px', marginBottom: '32px', fontFamily: 'Montserrat, sans-serif' }}>Analyzing SEO, ads, content & building your action plan</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'left', maxWidth: '300px', margin: '0 auto' }}>
                   {steps.map((s, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -213,65 +197,128 @@ function Dashboard() {
             {!loading && !results && (
               <div className="glass-card" style={{ padding: '80px 48px', textAlign: 'center' }}>
                 <div style={{ fontSize: '64px', marginBottom: '24px' }}>🔍</div>
-                <div style={{ fontFamily: 'Playfair Display, serif', fontSize: '24px', fontWeight: '700', marginBottom: '12px' }}>
-                  Ready to spy
-                </div>
-                <div style={{ color: '#8b949e', fontSize: '14px', fontFamily: 'Montserrat, sans-serif', lineHeight: '1.7', fontWeight: '400' }}>
-                  Enter your competitors on the left and hit Analyze.<br />
-                  AI will browse their websites and return full intel in 60 seconds.
+                <div style={{ fontFamily: 'Playfair Display, serif', fontSize: '24px', fontWeight: '700', marginBottom: '12px' }}>Ready to spy</div>
+                <div style={{ color: '#8b949e', fontSize: '14px', fontFamily: 'Montserrat, sans-serif', lineHeight: '1.7' }}>
+                  Enter your competitors and hit Analyze.<br />
+                  Get SEO intel, ad strategies, content analysis and a full action plan.
                 </div>
               </div>
             )}
 
             {results && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                 <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '11px', color: '#10b981', letterSpacing: '0.1em' }}>
-                  ✓ ANALYSIS COMPLETE — {results.length} COMPETITORS FOUND
+                  ✓ ANALYSIS COMPLETE — {results.length} COMPETITOR{results.length > 1 ? 'S' : ''} ANALYZED
                 </div>
+
                 {results.map((comp, i) => (
                   <div key={i} className="comp-card" style={{ animationDelay: `${i * 0.1}s` }}>
+
+                    {/* Header */}
                     <div style={{ padding: '24px 28px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <div>
-                        <div style={{ fontFamily: 'Playfair Display, serif', fontSize: '22px', fontWeight: '700', marginBottom: '4px' }}>{comp.name}</div>
-                        <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '11px', color: '#8b949e' }}>{comp.url}</div>
+                        <div style={{ fontFamily: 'Playfair Display, serif', fontSize: '24px', fontWeight: '700', marginBottom: '4px' }}>{comp.name}</div>
+                        <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '11px', color: '#8b949e', marginBottom: '8px' }}>{comp.url}</div>
+                        <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '13px', color: '#555', fontStyle: 'italic' }}>"{comp.positioning}"</div>
                       </div>
-                      <div style={{ background: `${getThreatColor(comp.threat_level)}15`, border: `1px solid ${getThreatColor(comp.threat_level)}40`, borderRadius: '2px', padding: '6px 14px', fontSize: '11px', color: getThreatColor(comp.threat_level), fontFamily: 'IBM Plex Mono, monospace', fontWeight: '600', letterSpacing: '0.08em' }}>
-                        {comp.threat_level} Threat
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+                        <div style={{ background: `${getThreatColor(comp.threat_level)}15`, border: `1px solid ${getThreatColor(comp.threat_level)}40`, borderRadius: '2px', padding: '6px 14px', fontSize: '11px', color: getThreatColor(comp.threat_level), fontFamily: 'IBM Plex Mono, monospace', fontWeight: '600', letterSpacing: '0.08em' }}>
+                          {comp.threat_level} Threat
+                        </div>
+                        <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '13px', color: '#e8a020', fontWeight: '600' }}>{comp.pricing}</div>
                       </div>
                     </div>
 
+                    {/* Tabs */}
+                    <div style={{ padding: '16px 28px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {tabs.map(tab => (
+                        <button key={tab} className={`tab-btn ${activeTab[i] === tab ? 'active' : ''}`} onClick={() => setActiveTab({ ...activeTab, [i]: tab })}>
+                          {tabLabels[tab]}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Tab Content */}
                     <div style={{ padding: '24px 28px' }}>
-                      <p style={{ fontSize: '14px', color: '#8b949e', fontStyle: 'italic', marginBottom: '20px', lineHeight: '1.6', fontFamily: 'Montserrat, sans-serif' }}>"{comp.positioning}"</p>
 
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+                      {/* Overview Tab */}
+                      {activeTab[i] === 'overview' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '4px', padding: '16px' }}>
+                              <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '10px', color: '#8b949e', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '8px' }}>Target Market</div>
+                              <div style={{ fontSize: '14px', color: '#e2e8f0', fontFamily: 'Montserrat, sans-serif' }}>{comp.target_market}</div>
+                            </div>
+                            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '4px', padding: '16px' }}>
+                              <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '10px', color: '#8b949e', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '8px' }}>Their USP</div>
+                              <div style={{ fontSize: '14px', color: '#e8a020', fontFamily: 'Montserrat, sans-serif', fontWeight: '600' }}>{comp.usp}</div>
+                            </div>
+                          </div>
+                          <div>
+                            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '10px', color: '#8b949e', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '10px' }}>Key Features</div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                              {comp.key_features?.map((f, j) => <span key={j} className="tag">{f}</span>)}
+                            </div>
+                          </div>
+                          <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '4px', padding: '16px' }}>
+                            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '10px', color: '#8b949e', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '8px' }}>Recent Moves</div>
+                            <div style={{ fontSize: '14px', color: '#e2e8f0', fontFamily: 'Montserrat, sans-serif', lineHeight: '1.6' }}>{comp.recent_moves}</div>
+                          </div>
+                          <div style={{ background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)', borderRadius: '4px', padding: '16px' }}>
+                            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '10px', color: '#ef4444', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '8px' }}>⚠ Their Weakness</div>
+                            <div style={{ fontSize: '14px', color: '#e2e8f0', fontFamily: 'Montserrat, sans-serif', lineHeight: '1.6' }}>{comp.main_weakness}</div>
+                          </div>
+                          <div style={{ background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.15)', borderRadius: '4px', padding: '16px' }}>
+                            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '10px', color: '#10b981', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '8px' }}>⚡ Your Opportunity</div>
+                            <div style={{ fontSize: '14px', color: '#e2e8f0', fontFamily: 'Montserrat, sans-serif', lineHeight: '1.6' }}>{comp.opportunity}</div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* SEO Tab */}
+                      {activeTab[i] === 'seo' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                          <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '4px', padding: '20px' }}>
+                            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '10px', color: '#8b949e', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '12px' }}>🔍 SEO Strategy</div>
+                            <div style={{ fontSize: '14px', color: '#e2e8f0', fontFamily: 'Montserrat, sans-serif', lineHeight: '1.8' }}>{comp.seo_strategy}</div>
+                          </div>
+                          <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '4px', padding: '20px' }}>
+                            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '10px', color: '#8b949e', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '12px' }}>📈 Growth Pattern</div>
+                            <div style={{ fontSize: '14px', color: '#e2e8f0', fontFamily: 'Montserrat, sans-serif', lineHeight: '1.8' }}>{comp.growth_pattern}</div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Ads Tab */}
+                      {activeTab[i] === 'ads' && (
+                        <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '4px', padding: '20px' }}>
+                          <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '10px', color: '#8b949e', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '12px' }}>💰 Paid Ads Strategy</div>
+                          <div style={{ fontSize: '14px', color: '#e2e8f0', fontFamily: 'Montserrat, sans-serif', lineHeight: '1.8' }}>{comp.paid_ads}</div>
+                        </div>
+                      )}
+
+                      {/* Content Tab */}
+                      {activeTab[i] === 'content' && (
+                        <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '4px', padding: '20px' }}>
+                          <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '10px', color: '#8b949e', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '12px' }}>📝 Content Strategy</div>
+                          <div style={{ fontSize: '14px', color: '#e2e8f0', fontFamily: 'Montserrat, sans-serif', lineHeight: '1.8' }}>{comp.content_strategy}</div>
+                        </div>
+                      )}
+
+                      {/* Action Plan Tab */}
+                      {activeTab[i] === 'action' && (
                         <div>
-                          <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '10px', color: '#8b949e', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '6px' }}>Pricing</div>
-                          <div style={{ fontSize: '14px', color: '#e8a020', fontWeight: '600', fontFamily: 'IBM Plex Mono, monospace' }}>{comp.pricing}</div>
+                          <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '10px', color: '#e8a020', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '16px' }}>🎯 Your Action Plan to Beat {comp.name}</div>
+                          <div>
+                            {comp.action_plan?.map((step, j) => (
+                              <div key={j} className="action-step">
+                                <div className="step-num">{j + 1}</div>
+                                <div style={{ fontSize: '14px', color: '#e2e8f0', fontFamily: 'Montserrat, sans-serif', lineHeight: '1.6', paddingTop: '4px' }}>{step}</div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                        <div>
-                          <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '10px', color: '#8b949e', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '6px' }}>Target Market</div>
-                          <div style={{ fontSize: '14px', color: '#e2e8f0', fontFamily: 'Montserrat, sans-serif' }}>{comp.target_market}</div>
-                        </div>
-                      </div>
-
-                      <div style={{ marginBottom: '20px' }}>
-                        <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '10px', color: '#8b949e', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '10px' }}>Key Features</div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                          {comp.key_features?.map((f, j) => (
-                            <span key={j} className="tag">{f}</span>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '4px', padding: '16px', marginBottom: '16px' }}>
-                        <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '10px', color: '#8b949e', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '8px' }}>Recent Moves</div>
-                        <div style={{ fontSize: '14px', color: '#e2e8f0', lineHeight: '1.6', fontFamily: 'Montserrat, sans-serif' }}>{comp.recent_moves}</div>
-                      </div>
-
-                      <div style={{ background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.15)', borderRadius: '4px', padding: '16px' }}>
-                        <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '10px', color: '#10b981', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '8px' }}>⚡ Your Opportunity</div>
-                        <div style={{ fontSize: '14px', color: '#e2e8f0', lineHeight: '1.6', fontFamily: 'Montserrat, sans-serif' }}>{comp.opportunity}</div>
-                      </div>
+                      )}
                     </div>
                   </div>
                 ))}
