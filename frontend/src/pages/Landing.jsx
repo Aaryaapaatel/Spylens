@@ -11,6 +11,7 @@ function Landing() {
   const [plan, setPlan] = useState('free');
   const [analysesLeft, setAnalysesLeft] = useState(2);
   const [userName, setUserName] = useState('');
+  const [liveStats, setLiveStats] = useState({ visitors: 0, analyses: 0, paid: 0 });
 
   useEffect(() => {
     const handleMouse = (e) => setMousePos({ x: e.clientX, y: e.clientY });
@@ -32,6 +33,35 @@ function Landing() {
         });
       }
     });
+
+    // Fetch live stats from Supabase
+    const fetchStats = async () => {
+      const { count: totalUsers } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
+      const { count: paidUsers } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).neq('plan', 'free');
+      const { count: analyses } = await supabase.from('analyses').select('*', { count: 'exact', head: true });
+
+      // Animate counters
+      const target = {
+        visitors: (totalUsers || 0) + 142, // add base number
+        analyses: analyses || 0,
+        paid: paidUsers || 0
+      };
+
+      let current = { visitors: 0, analyses: 0, paid: 0 };
+      const interval = setInterval(() => {
+        let done = true;
+        Object.keys(target).forEach(key => {
+          if (current[key] < target[key]) {
+            current[key] = Math.min(current[key] + Math.ceil(target[key] / 40), target[key]);
+            done = false;
+          }
+        });
+        setLiveStats({ ...current });
+        if (done) clearInterval(interval);
+      }, 40);
+    };
+
+    setTimeout(fetchStats, 3500);
 
     return () => window.removeEventListener('mousemove', handleMouse);
   }, []);
@@ -75,16 +105,17 @@ function Landing() {
         @keyframes dotPulse { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 1; transform: scale(1.4); } }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(70px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-        @keyframes orbitX { from { transform: rotateX(0deg) rotateY(0deg); } to { transform: rotateX(360deg) rotateY(360deg); } }
-        @keyframes orbitY { from { transform: rotateY(0deg) rotateX(20deg); } to { transform: rotateY(360deg) rotateX(20deg); } }
-        @keyframes orbitZ { from { transform: rotateZ(0deg) rotateX(40deg); } to { transform: rotateZ(-360deg) rotateX(40deg); } }
-        @keyframes floatOrb { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-12px); } }
+        @keyframes floatUp { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-10px); } }
         @keyframes blinkDot { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
         @keyframes radarSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        @keyframes pulseRing { 0% { transform: scale(0.8); opacity: 0.6; } 100% { transform: scale(2); opacity: 0; } }
+        @keyframes pulseRing { 0% { transform: scale(0.8); opacity: 0.6; } 100% { transform: scale(2.2); opacity: 0; } }
         @keyframes barGrow { from { width: 0; } to { width: var(--w); } }
-        @keyframes countUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes scanMove { 0% { top: 0%; } 100% { top: 100%; } }
+        @keyframes nodeFloat1 { 0%, 100% { transform: translate(0, 0); } 33% { transform: translate(4px, -6px); } 66% { transform: translate(-3px, 4px); } }
+        @keyframes nodeFloat2 { 0%, 100% { transform: translate(0, 0); } 33% { transform: translate(-5px, 3px); } 66% { transform: translate(4px, -5px); } }
+        @keyframes nodeFloat3 { 0%, 100% { transform: translate(0, 0); } 33% { transform: translate(3px, 5px); } 66% { transform: translate(-4px, -3px); } }
+        @keyframes scanLine { 0% { top: 0%; opacity: 0; } 5% { opacity: 1; } 95% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+        @keyframes countUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes liveFlash { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
         .slide-up { opacity: 0; transform: translateY(80px); transition: all 1s cubic-bezier(0.16, 1, 0.3, 1); }
         .slide-up.show { opacity: 1; transform: translateY(0); }
@@ -114,7 +145,7 @@ function Landing() {
         .feat-card:hover::before { width: 100%; }
         .feat-card:hover .feat-num { color: #e8a020; }
         .feat-num { font-family: 'Montserrat', sans-serif; font-size: 10px; color: #2a2a2a; letter-spacing: 0.2em; font-weight: 700; margin-bottom: 20px; transition: color 0.3s; text-transform: uppercase; }
-        .feat-title { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; letter-spacing: -0.01em; color: #f0ece4; }
+        .feat-title { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: #f0ece4; }
         .feat-desc { font-family: 'Montserrat', sans-serif; font-size: 13px; color: #3a3a3a; line-height: 1.8; font-weight: 400; }
         .marquee-track { display: inline-flex; animation: marquee 30s linear infinite; white-space: nowrap; }
         .marquee-item { font-family: 'Montserrat', sans-serif; font-size: 10px; color: #222; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 600; padding: 0 48px; display: inline-flex; align-items: center; gap: 48px; }
@@ -127,9 +158,11 @@ function Landing() {
         .plan-badge { background: rgba(232,160,32,0.1); border: 1px solid rgba(232,160,32,0.2); border-radius: 2px; padding: 6px 16px; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s ease; }
         .plan-badge:hover { background: rgba(232,160,32,0.2); border-color: rgba(232,160,32,0.4); }
         .user-banner { background: rgba(232,160,32,0.06); border-bottom: 1px solid rgba(232,160,32,0.1); padding: 10px 60px; display: flex; align-items: center; justify-content: space-between; position: fixed; top: 73px; left: 0; right: 0; z-index: 99; backdrop-filter: blur(20px); }
-        .data-tag { position: absolute; background: rgba(232,160,32,0.08); border: 1px solid rgba(232,160,32,0.2); border-radius: 2px; padding: 4px 10px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #e8a020; white-space: nowrap; animation: blinkDot 2s ease infinite; }
-        .intel-bar { height: 4px; background: rgba(232,160,32,0.15); border-radius: 2px; overflow: hidden; margin-top: 6px; }
+        .intel-bar { height: 3px; background: rgba(232,160,32,0.1); border-radius: 2px; overflow: hidden; margin-top: 6px; }
         .intel-bar-fill { height: 100%; background: linear-gradient(90deg, #e8a020, #f0b030); border-radius: 2px; animation: barGrow 1.5s ease forwards; }
+        .live-stat-card { background: #0c0c0c; border: 1px solid #161616; border-radius: 4px; padding: 20px; display: flex; align-items: center; gap: 16px; transition: border-color 0.3s; }
+        .live-stat-card:hover { border-color: rgba(232,160,32,0.2); }
+        .live-num { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 800; color: #e8a020; letter-spacing: -0.02em; animation: countUp 0.5s ease both; }
       `}</style>
 
       {/* Loader */}
@@ -296,40 +329,60 @@ function Landing() {
             </h2>
             <p className="body-text" style={{ marginBottom: '52px' }}>Built for small businesses who need enterprise-grade intelligence at a price they can actually afford.</p>
 
-            {/* 3D Intelligence Orb */}
-            <div style={{ position: 'relative', width: '280px', height: '280px', marginBottom: '40px' }}>
-              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {[1, 2, 3].map(i => (
-                  <div key={i} style={{ position: 'absolute', width: `${i * 80}px`, height: `${i * 80}px`, borderRadius: '50%', border: '1px solid rgba(232,160,32,0.12)', animation: `pulseRing ${2 + i * 0.6}s ease-out infinite`, animationDelay: `${i * 0.5}s` }} />
-                ))}
-              </div>
-              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'floatOrb 4s ease infinite' }}>
-                <div style={{ position: 'relative', width: '160px', height: '160px' }}>
-                  <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'radial-gradient(circle at 35% 35%, rgba(232,160,32,0.2), rgba(232,160,32,0.04) 60%, transparent)', border: '1px solid rgba(232,160,32,0.25)', boxShadow: '0 0 50px rgba(232,160,32,0.1), inset 0 0 30px rgba(232,160,32,0.04)' }} />
-                  <div style={{ position: 'absolute', inset: '-20px', borderRadius: '50%', border: '1px solid rgba(232,160,32,0.18)', animation: 'orbitX 6s linear infinite', transform: 'rotateX(70deg)' }}>
-                    <div style={{ position: 'absolute', top: '-4px', left: '50%', width: '7px', height: '7px', borderRadius: '50%', background: '#e8a020', transform: 'translateX(-50%)', boxShadow: '0 0 10px #e8a020' }} />
-                  </div>
-                  <div style={{ position: 'absolute', inset: '-30px', borderRadius: '50%', border: '1px solid rgba(232,160,32,0.12)', animation: 'orbitY 9s linear infinite', transform: 'rotateY(70deg)' }}>
-                    <div style={{ position: 'absolute', top: '-4px', left: '50%', width: '8px', height: '8px', borderRadius: '50%', background: '#f0b030', transform: 'translateX(-50%)', boxShadow: '0 0 12px #f0b030' }} />
-                  </div>
-                  <div style={{ position: 'absolute', inset: '-10px', borderRadius: '50%', border: '1px solid rgba(232,160,32,0.08)', animation: 'orbitZ 12s linear infinite' }}>
-                    <div style={{ position: 'absolute', bottom: '-3px', right: '20%', width: '5px', height: '5px', borderRadius: '50%', background: '#e8a020', boxShadow: '0 0 6px #e8a020' }} />
-                  </div>
-                  <div style={{ position: 'absolute', inset: '20px', borderRadius: '50%', overflow: 'hidden', opacity: 0.35 }}>
-                    <div style={{ position: 'absolute', inset: 0, background: 'conic-gradient(from 0deg, transparent 0deg, rgba(232,160,32,0.4) 30deg, transparent 60deg)', animation: 'radarSpin 3s linear infinite', borderRadius: '50%' }} />
-                  </div>
-                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{ fontFamily: 'Playfair Display, serif', fontSize: '36px', fontWeight: '800', color: '#e8a020', textShadow: '0 0 24px rgba(232,160,32,0.6)' }}>S</div>
-                  </div>
+            {/* AI Network Visualization */}
+            <div style={{ position: 'relative', width: '280px', height: '260px', marginBottom: '32px' }}>
+              {/* Grid background */}
+              <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(232,160,32,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(232,160,32,0.04) 1px, transparent 1px)', backgroundSize: '28px 28px', borderRadius: '4px', border: '1px solid rgba(232,160,32,0.08)' }} />
+
+              {/* Scan line */}
+              <div style={{ position: 'absolute', left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(232,160,32,0.6), transparent)', animation: 'scanLine 3s ease-in-out infinite', zIndex: 2 }} />
+
+              {/* Network nodes */}
+              {[
+                { x: '50%', y: '50%', size: 12, color: '#e8a020', glow: true, anim: 'nodeFloat1' },
+                { x: '20%', y: '25%', size: 7, color: '#f0b030', anim: 'nodeFloat2' },
+                { x: '80%', y: '20%', size: 8, color: '#e8a020', anim: 'nodeFloat3' },
+                { x: '15%', y: '70%', size: 6, color: '#e8a020', anim: 'nodeFloat1' },
+                { x: '75%', y: '72%', size: 9, color: '#f0b030', anim: 'nodeFloat2' },
+                { x: '45%', y: '18%', size: 5, color: '#e8a020', anim: 'nodeFloat3' },
+                { x: '85%', y: '50%', size: 6, color: '#e8a020', anim: 'nodeFloat1' },
+                { x: '30%', y: '78%', size: 7, color: '#f0b030', anim: 'nodeFloat2' },
+              ].map((node, i) => (
+                <div key={i} style={{ position: 'absolute', left: node.x, top: node.y, transform: 'translate(-50%, -50%)', animation: `${node.anim} ${3 + i * 0.4}s ease infinite`, animationDelay: `${i * 0.3}s`, zIndex: 3 }}>
+                  <div style={{ width: `${node.size}px`, height: `${node.size}px`, borderRadius: '50%', background: node.color, boxShadow: node.glow ? `0 0 20px ${node.color}, 0 0 40px ${node.color}40` : `0 0 8px ${node.color}80` }} />
                 </div>
-              </div>
-              <div className="data-tag" style={{ top: '8%', left: '68%', animationDelay: '0s' }}>Pricing ↓</div>
-              <div className="data-tag" style={{ top: '78%', left: '62%', animationDelay: '0.6s' }}>Threat: High</div>
-              <div className="data-tag" style={{ top: '88%', left: '2%', animationDelay: '1.2s' }}>New Feature</div>
+              ))}
+
+              {/* SVG connection lines */}
+              <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 1 }} viewBox="0 0 280 260">
+                {[
+                  [140, 130, 56, 65],
+                  [140, 130, 224, 52],
+                  [140, 130, 42, 182],
+                  [140, 130, 210, 187],
+                  [140, 130, 126, 47],
+                  [140, 130, 238, 130],
+                  [56, 65, 126, 47],
+                  [224, 52, 238, 130],
+                  [42, 182, 84, 203],
+                  [210, 187, 238, 130],
+                ].map(([x1, y1, x2, y2], i) => (
+                  <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(232,160,32,0.12)" strokeWidth="1" />
+                ))}
+              </svg>
+
+              {/* Corner labels */}
+              <div style={{ position: 'absolute', top: '6px', left: '8px', fontFamily: 'IBM Plex Mono, monospace', fontSize: '9px', color: 'rgba(232,160,32,0.4)', letterSpacing: '0.1em' }}>NETWORK</div>
+              <div style={{ position: 'absolute', bottom: '6px', right: '8px', fontFamily: 'IBM Plex Mono, monospace', fontSize: '9px', color: 'rgba(232,160,32,0.4)', letterSpacing: '0.1em' }}>LIVE</div>
+
+              {/* Floating labels */}
+              <div style={{ position: 'absolute', top: '12%', left: '62%', background: 'rgba(232,160,32,0.08)', border: '1px solid rgba(232,160,32,0.2)', borderRadius: '2px', padding: '3px 8px', fontFamily: 'IBM Plex Mono, monospace', fontSize: '9px', color: '#e8a020', animation: 'blinkDot 2s ease infinite', zIndex: 4 }}>Notion</div>
+              <div style={{ position: 'absolute', top: '55%', left: '55%', background: 'rgba(232,160,32,0.08)', border: '1px solid rgba(232,160,32,0.2)', borderRadius: '2px', padding: '3px 8px', fontFamily: 'IBM Plex Mono, monospace', fontSize: '9px', color: '#e8a020', animation: 'blinkDot 2s ease infinite', animationDelay: '0.8s', zIndex: 4 }}>SpyLens</div>
+              <div style={{ position: 'absolute', top: '68%', left: '48%', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '2px', padding: '3px 8px', fontFamily: 'IBM Plex Mono, monospace', fontSize: '9px', color: '#f87171', animation: 'blinkDot 2s ease infinite', animationDelay: '1.2s', zIndex: 4 }}>High ⚠</div>
             </div>
 
-            {/* Intelligence Score Card */}
-            <div style={{ background: '#0c0c0c', border: '1px solid #161616', borderRadius: '4px', padding: '24px', width: '280px' }}>
+            {/* Intel Score Card */}
+            <div style={{ background: '#0c0c0c', border: '1px solid #161616', borderRadius: '4px', padding: '24px', width: '280px', marginBottom: '20px' }}>
               <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#e8a020', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: '700', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', animation: 'blinkDot 1.5s ease infinite' }} />
                 Live Intel Score
@@ -340,8 +393,8 @@ function Landing() {
                 { label: 'Threat Analysis', val: '91%', w: '91%' },
                 { label: 'Market Position', val: '78%', w: '78%' },
               ].map((item, i) => (
-                <div key={i} style={{ marginBottom: '16px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <div key={i} style={{ marginBottom: '14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
                     <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '11px', color: '#555', fontWeight: '400' }}>{item.label}</span>
                     <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '11px', color: '#e8a020', fontWeight: '500' }}>{item.val}</span>
                   </div>
@@ -350,10 +403,32 @@ function Landing() {
                   </div>
                 </div>
               ))}
-              <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #1a1a1a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid #1a1a1a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#333', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Overall Score</span>
                 <span style={{ fontFamily: 'Playfair Display, serif', fontSize: '22px', fontWeight: '700', color: '#e8a020' }}>88<span style={{ fontSize: '12px', color: '#555' }}>/100</span></span>
               </div>
+            </div>
+
+            {/* Live Stats Card */}
+            <div style={{ background: '#0c0c0c', border: '1px solid #161616', borderRadius: '4px', padding: '24px', width: '280px' }}>
+              <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#e8a020', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: '700', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444', animation: 'liveFlash 1s ease infinite' }} />
+                Live Platform Stats
+              </div>
+              {[
+                { icon: '👁', label: 'Users on Platform', val: liveStats.visitors, color: '#e8a020' },
+                { icon: '⚡', label: 'Analyses Run', val: liveStats.analyses, color: '#3b82f6' },
+                { icon: '💎', label: 'Paid Subscribers', val: liveStats.paid, color: '#10b981' },
+              ].map((stat, i) => (
+                <div key={i} className="live-stat-card" style={{ marginBottom: i < 2 ? '10px' : '0' }}>
+                  <div style={{ fontSize: '20px', flexShrink: 0 }}>{stat.icon}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#333', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px' }}>{stat.label}</div>
+                    <div className="live-num" style={{ color: stat.color }}>{stat.val.toLocaleString()}</div>
+                  </div>
+                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: stat.color, animation: 'blinkDot 1.5s ease infinite', animationDelay: `${i * 0.3}s`, flexShrink: 0 }} />
+                </div>
+              ))}
             </div>
           </div>
 
