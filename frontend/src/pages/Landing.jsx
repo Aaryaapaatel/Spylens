@@ -381,33 +381,7 @@ function Landing() {
               <div style={{ position: 'absolute', top: '68%', left: '48%', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '2px', padding: '3px 8px', fontFamily: 'IBM Plex Mono, monospace', fontSize: '9px', color: '#f87171', animation: 'blinkDot 2s ease infinite', animationDelay: '1.2s', zIndex: 4 }}>High ⚠</div>
             </div>
 
-            {/* Intel Score Card */}
-            <div style={{ background: '#0c0c0c', border: '1px solid #161616', borderRadius: '4px', padding: '24px', width: '280px', marginBottom: '20px' }}>
-              <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#e8a020', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: '700', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', animation: 'blinkDot 1.5s ease infinite' }} />
-                Live Intel Score
-              </div>
-              {[
-                { label: 'Pricing Data', val: '94%', w: '94%' },
-                { label: 'Feature Tracking', val: '87%', w: '87%' },
-                { label: 'Threat Analysis', val: '91%', w: '91%' },
-                { label: 'Market Position', val: '78%', w: '78%' },
-              ].map((item, i) => (
-                <div key={i} style={{ marginBottom: '14px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                    <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '11px', color: '#555', fontWeight: '400' }}>{item.label}</span>
-                    <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '11px', color: '#e8a020', fontWeight: '500' }}>{item.val}</span>
-                  </div>
-                  <div className="intel-bar">
-                    <div className="intel-bar-fill" style={{ '--w': item.w, width: item.w, animationDelay: `${i * 0.2}s` }} />
-                  </div>
-                </div>
-              ))}
-              <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid #1a1a1a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#333', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Overall Score</span>
-                <span style={{ fontFamily: 'Playfair Display, serif', fontSize: '22px', fontWeight: '700', color: '#e8a020' }}>88<span style={{ fontSize: '12px', color: '#555' }}>/100</span></span>
-              </div>
-            </div>
+
 
             {/* Live Stats Card */}
             <div style={{ background: '#0c0c0c', border: '1px solid #161616', borderRadius: '4px', padding: '24px', width: '280px' }}>
