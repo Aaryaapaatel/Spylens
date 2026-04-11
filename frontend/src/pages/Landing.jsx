@@ -1,6 +1,205 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
+
+function CompetitorRadar() {
+  const canvasRef = useRef(null);
+  const [selected, setSelected] = useState(null);
+  const angleRef = useRef(0);
+  const blipsRef = useRef([
+    { id: 1, name: 'Notion', x: 0.7, y: 0.3, threat: 'High', price: '$16/mo', feature: 'All-in-one workspace' },
+    { id: 2, name: 'Crayon', x: 0.3, y: 0.7, threat: 'Medium', price: '$1500/mo', feature: 'Enterprise intel' },
+    { id: 3, name: 'Klue', x: 0.6, y: 0.65, threat: 'Medium', price: '$800/mo', feature: 'Battlecards' },
+    { id: 4, name: 'Kompyte', x: 0.25, y: 0.35, threat: 'Low', price: '$200/mo', feature: 'Auto tracking' },
+    { id: 5, name: 'Rival IQ', x: 0.75, y: 0.6, threat: 'Low', price: '$239/mo', feature: 'Social analytics' },
+  ]);
+  const trailsRef = useRef([]);
+  const animRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width = 280;
+    const H = canvas.height = 280;
+    const cx = W / 2, cy = H / 2, r = 120;
+
+    const getThreatColor = (t) => t === 'High' ? '#ef4444' : t === 'Medium' ? '#f59e0b' : '#10b981';
+
+    const draw = () => {
+      ctx.clearRect(0, 0, W, H);
+
+      // Background
+      ctx.fillStyle = '#0a0a0a';
+      ctx.beginPath();
+      ctx.arc(cx, cy, r + 10, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Grid rings
+      [0.3, 0.6, 1].forEach(scale => {
+        ctx.beginPath();
+        ctx.arc(cx, cy, r * scale, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(232,160,32,0.08)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      });
+
+      // Cross lines
+      ctx.strokeStyle = 'rgba(232,160,32,0.06)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(cx - r, cy); ctx.lineTo(cx + r, cy); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx, cy - r); ctx.lineTo(cx, cy + r); ctx.stroke();
+
+      // Radar sweep trail
+      trailsRef.current.forEach(trail => {
+        const grad = ctx.createConicalGradient ? null : null;
+        const ax = cx + r * Math.cos(trail.angle);
+        const ay = cy + r * Math.sin(trail.angle);
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, r, trail.angle - 0.4, trail.angle, false);
+        ctx.fillStyle = `rgba(232,160,32,${trail.alpha * 0.15})`;
+        ctx.fill();
+      });
+
+      // Radar sweep line
+      const angle = angleRef.current;
+      const sx = cx + r * Math.cos(angle);
+      const sy = cy + r * Math.sin(angle);
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(sx, sy);
+      ctx.strokeStyle = 'rgba(232,160,32,0.8)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Center dot
+      ctx.beginPath();
+      ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#e8a020';
+      ctx.fill();
+
+      // Blips
+      blipsRef.current.forEach(blip => {
+        const bx = cx + (blip.x - 0.5) * 2 * r * 0.85;
+        const by = cy + (blip.y - 0.5) * 2 * r * 0.85;
+        const color = getThreatColor(blip.threat);
+        const isSelected = selected?.id === blip.id;
+
+        // Pulse ring
+        if (isSelected) {
+          ctx.beginPath();
+          ctx.arc(bx, by, 14, 0, Math.PI * 2);
+          ctx.strokeStyle = color + '60';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+
+        // Blip dot
+        ctx.beginPath();
+        ctx.arc(bx, by, isSelected ? 7 : 5, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.shadowBlur = isSelected ? 16 : 8;
+        ctx.shadowColor = color;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Label
+        ctx.fillStyle = isSelected ? color : 'rgba(240,236,228,0.6)';
+        ctx.font = `${isSelected ? 600 : 400} 9px Montserrat, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillText(blip.name, bx, by - 10);
+      });
+
+      // Outer border
+      ctx.beginPath();
+      ctx.arc(cx, cy, r + 10, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(232,160,32,0.15)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Labels
+      ctx.fillStyle = 'rgba(232,160,32,0.3)';
+      ctx.font = '8px IBM Plex Mono, monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText('NETWORK', cx - r - 2, cy - r + 4);
+      ctx.textAlign = 'right';
+      ctx.fillText('LIVE', cx + r + 2, cy + r + 12);
+
+      // Update angle
+      angleRef.current += 0.025;
+      if (angleRef.current > Math.PI * 2) angleRef.current = 0;
+
+      // Update trails
+      trailsRef.current.push({ angle: angleRef.current, alpha: 1 });
+      trailsRef.current = trailsRef.current
+        .map(t => ({ ...t, alpha: t.alpha - 0.03 }))
+        .filter(t => t.alpha > 0);
+
+      animRef.current = requestAnimationFrame(draw);
+    };
+
+    draw();
+
+    // Click handler
+    const handleClick = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      const scaleX = W / rect.width;
+      const scaleY = H / rect.height;
+      const px = mx * scaleX;
+      const py = my * scaleY;
+
+      let hit = null;
+      blipsRef.current.forEach(blip => {
+        const bx = cx + (blip.x - 0.5) * 2 * r * 0.85;
+        const by = cy + (blip.y - 0.5) * 2 * r * 0.85;
+        const dist = Math.sqrt((px - bx) ** 2 + (py - by) ** 2);
+        if (dist < 16) hit = blip;
+      });
+      setSelected(hit);
+    };
+
+    canvas.addEventListener('click', handleClick);
+    return () => {
+      cancelAnimationFrame(animRef.current);
+      canvas.removeEventListener('click', handleClick);
+    };
+  }, [selected]);
+
+  const getThreatColor = (t) => t === 'High' ? '#ef4444' : t === 'Medium' ? '#f59e0b' : '#10b981';
+
+  return (
+    <div style={{ position: 'relative', width: '280px' }}>
+      <canvas ref={canvasRef} style={{ width: '280px', height: '280px', cursor: 'crosshair', display: 'block' }} />
+      <div style={{ marginTop: '12px', minHeight: '80px' }}>
+        {selected ? (
+          <div style={{ background: '#0c0c0c', border: `1px solid ${getThreatColor(selected.threat)}30`, borderRadius: '4px', padding: '16px', animation: 'fadeIn 0.2s ease' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <span style={{ fontFamily: 'Playfair Display, serif', fontSize: '16px', fontWeight: '700', color: '#f0ece4' }}>{selected.name}</span>
+              <span style={{ background: getThreatColor(selected.threat) + '20', border: `1px solid ${getThreatColor(selected.threat)}40`, borderRadius: '2px', padding: '2px 8px', fontFamily: 'IBM Plex Mono, monospace', fontSize: '9px', color: getThreatColor(selected.threat), fontWeight: '600' }}>{selected.threat} Threat</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <div>
+                <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '9px', color: '#333', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '3px' }}>Price</div>
+                <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '12px', color: '#e8a020' }}>{selected.price}</div>
+              </div>
+              <div>
+                <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '9px', color: '#333', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '3px' }}>Known For</div>
+                <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '11px', color: '#888' }}>{selected.feature}</div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '20px 0' }}>
+            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '10px', color: '#2a2a2a', letterSpacing: '0.1em' }}>TAP A BLIP TO REVEAL INTEL</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function Landing() {
   const navigate = useNavigate();
@@ -34,33 +233,21 @@ function Landing() {
       }
     });
 
-    // Fetch live stats from Supabase
     const fetchStats = async () => {
       const { count: totalUsers } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
       const { count: paidUsers } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).neq('plan', 'free');
       const { count: analyses } = await supabase.from('analyses').select('*', { count: 'exact', head: true });
-
-      // Animate counters
-      const target = {
-        visitors: (totalUsers || 0) + 142, // add base number
-        analyses: analyses || 0,
-        paid: paidUsers || 0
-      };
-
+      const target = { visitors: (totalUsers || 0) + 142, analyses: analyses || 0, paid: paidUsers || 0 };
       let current = { visitors: 0, analyses: 0, paid: 0 };
       const interval = setInterval(() => {
         let done = true;
         Object.keys(target).forEach(key => {
-          if (current[key] < target[key]) {
-            current[key] = Math.min(current[key] + Math.ceil(target[key] / 40), target[key]);
-            done = false;
-          }
+          if (current[key] < target[key]) { current[key] = Math.min(current[key] + Math.ceil(target[key] / 40), target[key]); done = false; }
         });
         setLiveStats({ ...current });
         if (done) clearInterval(interval);
       }, 40);
     };
-
     setTimeout(fetchStats, 3500);
 
     return () => window.removeEventListener('mousemove', handleMouse);
@@ -77,7 +264,6 @@ function Landing() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;700;800;900&family=Playfair+Display:ital,wght@0,700;0,800;1,700;1,800&family=DM+Serif+Display:ital@0;1&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Montserrat', sans-serif; }
-
         .loader { position: fixed; inset: 0; background: #000; z-index: 1000; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 32px; transition: opacity 1s ease, transform 1s cubic-bezier(0.76, 0, 0.24, 1); overflow: hidden; }
         .loader.hide { opacity: 0; transform: translateY(-100%); pointer-events: none; }
         .loader-bg-glow { position: absolute; width: 800px; height: 800px; background: radial-gradient(circle, rgba(232,160,32,0.12) 0%, transparent 65%); border-radius: 50%; animation: loaderPulse 2.5s ease infinite; }
@@ -96,27 +282,17 @@ function Landing() {
         .loader-dot { width: 4px; height: 4px; border-radius: 50%; background: #e8a020; animation: dotPulse 1.2s ease infinite; }
         .loader-dot:nth-child(2) { animation-delay: 0.2s; }
         .loader-dot:nth-child(3) { animation-delay: 0.4s; }
-
         @keyframes loaderPulse { 0%, 100% { transform: scale(1); opacity: 0.6; } 50% { transform: scale(1.15); opacity: 1; } }
         @keyframes cornerFade { from { opacity: 0; } to { opacity: 1; } }
         @keyframes expandLine { to { width: 400px; } }
         @keyframes revealUp { to { transform: translateY(0); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes dotPulse { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 1; transform: scale(1.4); } }
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(70px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-        @keyframes floatUp { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-10px); } }
         @keyframes blinkDot { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
-        @keyframes radarSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        @keyframes pulseRing { 0% { transform: scale(0.8); opacity: 0.6; } 100% { transform: scale(2.2); opacity: 0; } }
         @keyframes barGrow { from { width: 0; } to { width: var(--w); } }
-        @keyframes nodeFloat1 { 0%, 100% { transform: translate(0, 0); } 33% { transform: translate(4px, -6px); } 66% { transform: translate(-3px, 4px); } }
-        @keyframes nodeFloat2 { 0%, 100% { transform: translate(0, 0); } 33% { transform: translate(-5px, 3px); } 66% { transform: translate(4px, -5px); } }
-        @keyframes nodeFloat3 { 0%, 100% { transform: translate(0, 0); } 33% { transform: translate(3px, 5px); } 66% { transform: translate(-4px, -3px); } }
-        @keyframes scanLine { 0% { top: 0%; opacity: 0; } 5% { opacity: 1; } 95% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
-        @keyframes countUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes liveFlash { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-
+        @keyframes countUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .slide-up { opacity: 0; transform: translateY(80px); transition: all 1s cubic-bezier(0.16, 1, 0.3, 1); }
         .slide-up.show { opacity: 1; transform: translateY(0); }
         .slide-left { opacity: 0; transform: translateX(-80px); transition: all 1s cubic-bezier(0.16, 1, 0.3, 1); }
@@ -125,11 +301,9 @@ function Landing() {
         .slide-right.show { opacity: 1; transform: translateX(0); }
         .fade-in { opacity: 0; transition: opacity 1s ease; }
         .fade-in.show { opacity: 1; }
-
         .silk { position: fixed; inset: 0; background: radial-gradient(ellipse 80% 50% at 20% 40%, rgba(232,160,32,0.04), transparent), radial-gradient(ellipse 60% 80% at 80% 60%, rgba(255,255,255,0.01), transparent); pointer-events: none; z-index: 0; }
         .grid-overlay { position: fixed; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px); background-size: 80px 80px; pointer-events: none; z-index: 0; }
         .cursor-light { position: fixed; width: 400px; height: 400px; border-radius: 50%; background: radial-gradient(circle, rgba(232,160,32,0.04), transparent 70%); pointer-events: none; z-index: 1; transition: transform 0.15s ease; }
-
         .nav-item { font-family: 'Montserrat', sans-serif; font-size: 11px; color: #444; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; cursor: pointer; transition: color 0.2s; }
         .nav-item:hover { color: #f0ece4; }
         .btn-primary { background: #e8a020; color: #070707; border: none; padding: 16px 40px; font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer; transition: all 0.3s ease; border-radius: 2px; }
@@ -158,11 +332,9 @@ function Landing() {
         .plan-badge { background: rgba(232,160,32,0.1); border: 1px solid rgba(232,160,32,0.2); border-radius: 2px; padding: 6px 16px; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s ease; }
         .plan-badge:hover { background: rgba(232,160,32,0.2); border-color: rgba(232,160,32,0.4); }
         .user-banner { background: rgba(232,160,32,0.06); border-bottom: 1px solid rgba(232,160,32,0.1); padding: 10px 60px; display: flex; align-items: center; justify-content: space-between; position: fixed; top: 73px; left: 0; right: 0; z-index: 99; backdrop-filter: blur(20px); }
-        .intel-bar { height: 3px; background: rgba(232,160,32,0.1); border-radius: 2px; overflow: hidden; margin-top: 6px; }
-        .intel-bar-fill { height: 100%; background: linear-gradient(90deg, #e8a020, #f0b030); border-radius: 2px; animation: barGrow 1.5s ease forwards; }
-        .live-stat-card { background: #0c0c0c; border: 1px solid #161616; border-radius: 4px; padding: 20px; display: flex; align-items: center; gap: 16px; transition: border-color 0.3s; }
+        .live-stat-card { background: #0c0c0c; border: 1px solid #161616; border-radius: 4px; padding: 16px; display: flex; align-items: center; gap: 12px; transition: border-color 0.3s; margin-bottom: 8px; }
         .live-stat-card:hover { border-color: rgba(232,160,32,0.2); }
-        .live-num { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 800; color: #e8a020; letter-spacing: -0.02em; animation: countUp 0.5s ease both; }
+        .live-num { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 800; letter-spacing: -0.02em; animation: countUp 0.5s ease both; }
       `}</style>
 
       {/* Loader */}
@@ -245,7 +417,6 @@ function Landing() {
             <div style={{ width: '48px', height: '1px', background: '#e8a020' }} />
             <span className="section-eyebrow" style={{ marginBottom: 0 }}>AI Intelligence Platform — 2026</span>
           </div>
-
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '80px', alignItems: 'end', marginBottom: '80px' }}>
             <h1 className={`hero-title slide-up ${showContent ? 'show' : ''}`} style={{ transitionDelay: '0.2s' }}>
               {user ? (<>Ready to<br />outsmart your<br /><span className="hero-accent">rivals</span>?</>) : (<>Know<br />what your<br /><span className="hero-accent">rivals</span><br />are doing.</>)}
@@ -292,14 +463,8 @@ function Landing() {
               )}
             </div>
           </div>
-
           <div className={`slide-up ${showContent ? 'show' : ''}`} style={{ transitionDelay: '0.5s', borderTop: '1px solid #111', paddingTop: '60px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '48px' }}>
-            {[
-              { val: '$20K', sub: 'Saved vs enterprise' },
-              { val: '60s', sub: 'Analysis time' },
-              { val: '10x', sub: 'Faster research' },
-              { val: '₹399', sub: 'Pro plan per month' },
-            ].map((s, i) => (
+            {[{ val: '$20K', sub: 'Saved vs enterprise' }, { val: '60s', sub: 'Analysis time' }, { val: '10x', sub: 'Faster research' }, { val: '₹399', sub: 'Pro plan per month' }].map((s, i) => (
               <div key={i}><div className="stat-val">{s.val}</div><div className="stat-label">{s.sub}</div></div>
             ))}
           </div>
@@ -320,72 +485,19 @@ function Landing() {
       {/* Features */}
       <section id="features" style={{ position: 'relative', zIndex: 1, maxWidth: '1400px', margin: '0 auto', padding: '160px 60px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '120px', alignItems: 'start' }}>
-
-          {/* Left sticky */}
           <div style={{ position: 'sticky', top: '120px' }}>
             <div className="section-eyebrow">What We Do</div>
             <h2 className="section-title" style={{ fontSize: 'clamp(36px, 4vw, 56px)', marginBottom: '32px' }}>
               Everything<br />you need<br />to <span className="hero-accent" style={{ fontSize: 'inherit' }}>win</span>.
             </h2>
-            <p className="body-text" style={{ marginBottom: '52px' }}>Built for small businesses who need enterprise-grade intelligence at a price they can actually afford.</p>
+            <p className="body-text" style={{ marginBottom: '40px' }}>Built for small businesses who need enterprise-grade intelligence at a price they can actually afford.</p>
 
-            {/* AI Network Visualization */}
-            <div style={{ position: 'relative', width: '280px', height: '260px', marginBottom: '32px' }}>
-              {/* Grid background */}
-              <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(232,160,32,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(232,160,32,0.04) 1px, transparent 1px)', backgroundSize: '28px 28px', borderRadius: '4px', border: '1px solid rgba(232,160,32,0.08)' }} />
+            {/* Interactive Radar */}
+            <CompetitorRadar />
 
-              {/* Scan line */}
-              <div style={{ position: 'absolute', left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(232,160,32,0.6), transparent)', animation: 'scanLine 3s ease-in-out infinite', zIndex: 2 }} />
-
-              {/* Network nodes */}
-              {[
-                { x: '50%', y: '50%', size: 12, color: '#e8a020', glow: true, anim: 'nodeFloat1' },
-                { x: '20%', y: '25%', size: 7, color: '#f0b030', anim: 'nodeFloat2' },
-                { x: '80%', y: '20%', size: 8, color: '#e8a020', anim: 'nodeFloat3' },
-                { x: '15%', y: '70%', size: 6, color: '#e8a020', anim: 'nodeFloat1' },
-                { x: '75%', y: '72%', size: 9, color: '#f0b030', anim: 'nodeFloat2' },
-                { x: '45%', y: '18%', size: 5, color: '#e8a020', anim: 'nodeFloat3' },
-                { x: '85%', y: '50%', size: 6, color: '#e8a020', anim: 'nodeFloat1' },
-                { x: '30%', y: '78%', size: 7, color: '#f0b030', anim: 'nodeFloat2' },
-              ].map((node, i) => (
-                <div key={i} style={{ position: 'absolute', left: node.x, top: node.y, transform: 'translate(-50%, -50%)', animation: `${node.anim} ${3 + i * 0.4}s ease infinite`, animationDelay: `${i * 0.3}s`, zIndex: 3 }}>
-                  <div style={{ width: `${node.size}px`, height: `${node.size}px`, borderRadius: '50%', background: node.color, boxShadow: node.glow ? `0 0 20px ${node.color}, 0 0 40px ${node.color}40` : `0 0 8px ${node.color}80` }} />
-                </div>
-              ))}
-
-              {/* SVG connection lines */}
-              <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 1 }} viewBox="0 0 280 260">
-                {[
-                  [140, 130, 56, 65],
-                  [140, 130, 224, 52],
-                  [140, 130, 42, 182],
-                  [140, 130, 210, 187],
-                  [140, 130, 126, 47],
-                  [140, 130, 238, 130],
-                  [56, 65, 126, 47],
-                  [224, 52, 238, 130],
-                  [42, 182, 84, 203],
-                  [210, 187, 238, 130],
-                ].map(([x1, y1, x2, y2], i) => (
-                  <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(232,160,32,0.12)" strokeWidth="1" />
-                ))}
-              </svg>
-
-              {/* Corner labels */}
-              <div style={{ position: 'absolute', top: '6px', left: '8px', fontFamily: 'IBM Plex Mono, monospace', fontSize: '9px', color: 'rgba(232,160,32,0.4)', letterSpacing: '0.1em' }}>NETWORK</div>
-              <div style={{ position: 'absolute', bottom: '6px', right: '8px', fontFamily: 'IBM Plex Mono, monospace', fontSize: '9px', color: 'rgba(232,160,32,0.4)', letterSpacing: '0.1em' }}>LIVE</div>
-
-              {/* Floating labels */}
-              <div style={{ position: 'absolute', top: '12%', left: '62%', background: 'rgba(232,160,32,0.08)', border: '1px solid rgba(232,160,32,0.2)', borderRadius: '2px', padding: '3px 8px', fontFamily: 'IBM Plex Mono, monospace', fontSize: '9px', color: '#e8a020', animation: 'blinkDot 2s ease infinite', zIndex: 4 }}>Notion</div>
-              <div style={{ position: 'absolute', top: '55%', left: '55%', background: 'rgba(232,160,32,0.08)', border: '1px solid rgba(232,160,32,0.2)', borderRadius: '2px', padding: '3px 8px', fontFamily: 'IBM Plex Mono, monospace', fontSize: '9px', color: '#e8a020', animation: 'blinkDot 2s ease infinite', animationDelay: '0.8s', zIndex: 4 }}>SpyLens</div>
-              <div style={{ position: 'absolute', top: '68%', left: '48%', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '2px', padding: '3px 8px', fontFamily: 'IBM Plex Mono, monospace', fontSize: '9px', color: '#f87171', animation: 'blinkDot 2s ease infinite', animationDelay: '1.2s', zIndex: 4 }}>High ⚠</div>
-            </div>
-
-
-
-            {/* Live Stats Card */}
-            <div style={{ background: '#0c0c0c', border: '1px solid #161616', borderRadius: '4px', padding: '24px', width: '280px' }}>
-              <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#e8a020', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: '700', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {/* Live Stats */}
+            <div style={{ marginTop: '32px', background: '#0c0c0c', border: '1px solid #161616', borderRadius: '4px', padding: '24px', width: '280px' }}>
+              <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#e8a020', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: '700', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444', animation: 'liveFlash 1s ease infinite' }} />
                 Live Platform Stats
               </div>
@@ -394,19 +506,18 @@ function Landing() {
                 { icon: '⚡', label: 'Analyses Run', val: liveStats.analyses, color: '#3b82f6' },
                 { icon: '💎', label: 'Paid Subscribers', val: liveStats.paid, color: '#10b981' },
               ].map((stat, i) => (
-                <div key={i} className="live-stat-card" style={{ marginBottom: i < 2 ? '10px' : '0' }}>
-                  <div style={{ fontSize: '20px', flexShrink: 0 }}>{stat.icon}</div>
+                <div key={i} className="live-stat-card">
+                  <div style={{ fontSize: '18px', flexShrink: 0 }}>{stat.icon}</div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#333', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px' }}>{stat.label}</div>
+                    <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '9px', color: '#333', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '3px' }}>{stat.label}</div>
                     <div className="live-num" style={{ color: stat.color }}>{stat.val.toLocaleString()}</div>
                   </div>
-                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: stat.color, animation: 'blinkDot 1.5s ease infinite', animationDelay: `${i * 0.3}s`, flexShrink: 0 }} />
+                  <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: stat.color, animation: 'blinkDot 1.5s ease infinite', animationDelay: `${i * 0.3}s`, flexShrink: 0 }} />
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Features list */}
           <div>
             {[
               { num: '01', title: 'Real-time Analysis', desc: 'AI browses competitor websites live. No cached data. No guessing. Fresh intelligence returned in under 60 seconds every single time.' },
@@ -433,9 +544,7 @@ function Landing() {
       <section id="comparison" style={{ position: 'relative', zIndex: 1, background: '#050505', borderTop: '1px solid #0f0f0f' }}>
         <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '160px 60px' }}>
           <div style={{ marginBottom: '80px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-            <h2 className="section-title" style={{ fontSize: 'clamp(36px, 5vw, 64px)' }}>
-              The honest<br /><span className="hero-accent" style={{ fontSize: 'inherit' }}>comparison</span>.
-            </h2>
+            <h2 className="section-title" style={{ fontSize: 'clamp(36px, 5vw, 64px)' }}>The honest<br /><span className="hero-accent" style={{ fontSize: 'inherit' }}>comparison</span>.</h2>
             <p className="body-text" style={{ maxWidth: '300px', textAlign: 'right' }}>We're not afraid to show you how we stack up.</p>
           </div>
           <div style={{ border: '1px solid #111', borderRadius: '4px', overflow: 'hidden' }}>
@@ -492,7 +601,6 @@ function Landing() {
         </div>
         <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '10px', color: '#222', letterSpacing: '0.12em', fontWeight: '600', textTransform: 'uppercase' }}>© 2026 SpyLens</div>
       </footer>
-
     </div>
   );
 }
