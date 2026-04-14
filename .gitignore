@@ -1,0 +1,11 @@
+.env
+.env.local
+.env.production
+frontend/.env
+backend/.env
+backend/app/.env
+node_modules/
+__pycache__/
+*.pyc
+frontend/build/
+.DS_Store
